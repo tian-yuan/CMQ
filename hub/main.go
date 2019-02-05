@@ -8,6 +8,8 @@ import (
 
 	"fmt"
 	"CMQ/hub/util"
+	"CMQ/hub/commands"
+	"runtime"
 )
 
 func initLogger() {
@@ -27,21 +29,15 @@ func initLogger() {
 	// ########### End Init Viper
 
 	// Read configuration
-	var c = logrusHelper.UnmarshalConfiguration(viper) // Unmarshal configuration from Viper
-	logrusHelper.SetConfig(logrus.StandardLogger(), c) // for e.g. apply it to logrus default instance
+	var c = util.UnmarshalConfiguration(viper) // Unmarshal configuration from Viper
+	util.SetConfig(logrus.StandardLogger(), c) // for e.g. apply it to logrus default instance
 
 	// ### End Read Configuration
-
-	// ### Use logrus as normal
-	logrus.WithFields(logrus.Fields{
-		"animal": "walrus",
-	}).Error("A walrus appears")
 }
 
 func main() {
 	initLogger()
-	for i := 0; i < 10; i++ {
-		logrus.Error("start device gateway.")
-	}
-	logrus.Info("finished.")
+	runtime.GOMAXPROCS(runtime.NumCPU())
+
+	commands.Execute()
 }

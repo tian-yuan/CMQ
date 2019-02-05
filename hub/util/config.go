@@ -1,4 +1,4 @@
-package logrusHelper
+package util
 
 import (
 	"io"
