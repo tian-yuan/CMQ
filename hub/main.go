@@ -40,4 +40,10 @@ func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	commands.Execute()
+
+	stopCh := util.SetupSignalHandler()
+	<-stopCh
+
+	logrus.Infof("hub stop")
+	commands.Stop()
 }

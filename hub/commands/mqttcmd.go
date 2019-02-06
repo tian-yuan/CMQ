@@ -15,7 +15,7 @@ var mqttCmd = &cobra.Command{
 		conf := svc.NewMqttConf()
 		initFlags(cmd, conf)
 		mqttSvc := svc.NewMqttSvc(conf)
-		mqttSvc.StartMqttSvc()
+		mqttSvc.Start()
 	},
 }
 

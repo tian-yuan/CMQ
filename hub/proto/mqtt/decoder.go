@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"io"
 
-	"proto"
-	"util"
+	"CMQ/hub/proto"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -171,7 +171,7 @@ func (de *Decoder) wsFrameLengthState() (int, error) {
 			de.start += 1 // skip 126
 		} else {
 			// the largest packet is 16K, so four bytes is too large
-			util.Error("Websocket length should not be 4 bytes encoding")
+			logrus.Error("Websocket length should not be 4 bytes encoding")
 			return proto.WsFrameError, wsFrameTooLargeError
 		}
 
@@ -186,7 +186,7 @@ func (de *Decoder) wsFrameLengthState() (int, error) {
 
 			de.wsFrameLen = int(plen0)<<8 + int(plen1)
 			if de.wsFrameLen < 126 {
-				util.Error("Websocket length invalid, less than 126 but 2 bytes")
+				logrus.Error("Websocket length invalid, less than 126 but 2 bytes")
 				return proto.WsFrameError, wsMalformedLengthError
 			}
 			if de.mask {
@@ -194,7 +194,7 @@ func (de *Decoder) wsFrameLengthState() (int, error) {
 			}
 
 			if de.wsFrameLen > maxPacketLimit {
-				util.Error("Websocket length too large")
+				logrus.Error("Websocket length too large")
 				return proto.WsFrameError, wsFrameTooLargeError
 			}
 
@@ -292,7 +292,7 @@ func (de *Decoder) lengthState() error {
 		de.mqttStart += 1
 		de.mqttLen = de.mqttLen + int(h&0x7f)*(1<<uint(de.mqttLenBytes*7))
 		if de.mqttLen > maxPacketLimit {
-			util.Error("Mqtt length is too large")
+			logrus.Error("Mqtt length is too large")
 			return mqttPacketTooLargeError
 		}
 
@@ -300,7 +300,7 @@ func (de *Decoder) lengthState() error {
 
 		if h&0x80 == 0 {
 			if de.mqttLenBytes > 1 && h == 0 { // something like 0x80,0x80,0x00, malformed packet length
-				util.Error("Mqtt length is malformed, like 0x80,0x80,0x00")
+				logrus.Error("Mqtt length is malformed, like 0x80,0x80,0x00")
 				return mqttMalformedLengthError
 			}
 
@@ -308,7 +308,7 @@ func (de *Decoder) lengthState() error {
 			return nil
 		} else {
 			if de.mqttLenBytes == 4 {
-				util.Error("Mqtt length bytes should be less than 4")
+				logrus.Error("Mqtt length bytes should be less than 4")
 				return mqttMalformedLengthError
 			}
 		}
