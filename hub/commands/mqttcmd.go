@@ -13,13 +13,9 @@ var mqttCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		logrus.Info("Start mqtt hub gateway v0.0.1 -- HEAD")
 		conf := svc.NewMqttConf()
-		initFlags(cmd, conf)
+		cmd.Flags().StringVarP(&conf.MqttHost, "mqttHost", "m", "0.0.0.0", "mqtt hub bind host address.")
+		cmd.Flags().Uint16VarP(&conf.MqttPort, "mqttPort", "p", 1883, "mqtt hub bind port.")
 		mqttSvc := svc.NewMqttSvc(conf)
 		mqttSvc.Start()
 	},
-}
-
-func initFlags(cmd *cobra.Command, conf *svc.MqttConf) {
-	cmd.Flags().StringVarP(&conf.MqttHost, "mqttHost", "m", "0.0.0.0", "mqtt hub bind host address.")
-	cmd.Flags().Uint16VarP(&conf.MqttPort, "mqttPort", "p", 1883, "mqtt hub bind port.")
 }

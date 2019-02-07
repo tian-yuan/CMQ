@@ -7,6 +7,7 @@ import (
 
 func init()  {
 	rootCmd.AddCommand(mqttCmd)
+	rootCmd.AddCommand(coapCmd)
 }
 
 var rootCmd = &cobra.Command{
