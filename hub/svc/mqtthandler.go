@@ -18,6 +18,32 @@ func handleConnection(s *MqttSvc, c net.Conn, ws bool) {
 	fd := util.GetConnFd(c)
 
 	logrus.Infof("receive connection fd : %d", fd)
+	ctx := GetCtxForFd(fd)
+	if ctx == nil {
+		c.Close()
+		return
+	}
+
+	logrus.Infof("Client connect, address: %s, isWs: %t, fd: %d", c.RemoteAddr(), ws, fd)
+
+	ctx.Reset(ws, c)
+
+	ctx.handleClient()
+	ctx.Mux.Lock()
+
+	logrus.Infof("Client disconnect, address: %s, isWs: %t, fd: %d, reason: %s, err: %s",
+		c.RemoteAddr(), ws, fd, reasons[ctx.exitCode], ctx.err)
+
+	ctx.destroySession()
+	ctx.status = inactiveState
+
+	ctx.Conn.Close()
+	ctx.Conn = nil
+	ctx.StopCh = nil
+
+	ctx.resetPendingPacket()
+
+	ctx.Mux.Unlock()
 }
 
 func (ctx *ClientCtx) destroySession() {
@@ -39,8 +65,8 @@ func (ctx *ClientCtx) handleClient() {
 		}
 
 		var timeout time.Duration
-		if ctx.keepalive == 0 { // if not connected
-			timeout = 5000
+		if ctx.keepalive == 0 { // if not receive connect packet
+			timeout = 5 * time.Second
 		} else {
 			timeout = time.Duration(ctx.keepalive*2) * time.Second
 
@@ -140,7 +166,7 @@ func (ctx *ClientCtx) handleConnectPacket(p *mqtt.ConnectPacket) error {
 	connack.Encode(&ctx.encoder)
 
 	// Now there is only one goroutine to access ctx, no mutex required.
-	e := ctx.encoder.WriteTo(ctx.Conn, 5000)
+	e := ctx.encoder.WriteTo(ctx.Conn, 5 * time.Second)
 
 	if e != nil {
 		logrus.Infof("Write error: %s", e)
@@ -185,7 +211,7 @@ func (ctx *ClientCtx) publishForward(p *mqtt.PublishPacket) error {
 		// puback is fixed size
 		// encode error check is not necessary
 		puback.Encode(&ctx.encoder)
-		e := ctx.encoder.WriteTo(ctx.Conn, 5000)
+		e := ctx.encoder.WriteTo(ctx.Conn, 5 * time.Second)
 
 		ctx.Mux.Unlock()
 
@@ -245,7 +271,7 @@ func (ctx *ClientCtx) handleSubscribePacket(p *mqtt.SubscribePacket) error {
 	// we limit max topic num per sub is 16
 	// so suback payload is small, encode will always succeed
 	ack.Encode(&ctx.encoder)
-	e := ctx.encoder.WriteTo(ctx.Conn, 5000)
+	e := ctx.encoder.WriteTo(ctx.Conn, 5 * time.Second)
 
 	ctx.Mux.Unlock()
 
@@ -271,7 +297,7 @@ func (ctx *ClientCtx) handleUnsubPacket(p *mqtt.UnsubscribePacket) error {
 	// unsuback is fixed size and small,
 	// encode will always succeed
 	ack.Encode(&ctx.encoder)
-	e = ctx.encoder.WriteTo(ctx.Conn, 5000)
+	e = ctx.encoder.WriteTo(ctx.Conn, 5 * time.Second)
 	ctx.Mux.Unlock()
 
 	if e != nil {
@@ -289,7 +315,7 @@ func (ctx *ClientCtx) handlePingreqPacket(p *mqtt.PingreqPacket) error {
 	ctx.Mux.Lock()
 
 	pingresp.Encode(&ctx.encoder)
-	e := ctx.encoder.WriteTo(ctx.Conn, 5000)
+	e := ctx.encoder.WriteTo(ctx.Conn, 5 * time.Second)
 
 	ctx.Mux.Unlock()
 
@@ -316,7 +342,7 @@ func (ctx *ClientCtx) publish(p *mqtt.PublishPacket, deviceName string, productK
 		return rcEncodeError
 	}
 
-	if e := ctx.encoder.WriteTo(ctx.Conn, 5000); e != nil {
+	if e := ctx.encoder.WriteTo(ctx.Conn, 5 * time.Second); e != nil {
 		logrus.Errorf("Push message error: %v, %s, %s", e, deviceName, productKey)
 		return rcNetworkError
 	}

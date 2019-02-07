@@ -23,6 +23,13 @@ type MqttConf struct {
 	MqttPort uint16
 }
 
+func init() {
+	ClientCtxs = make([]ClientCtx, 50 * 10000)
+	for i := 0; i < len(ClientCtxs); i += 1 {
+		ClientCtxs[i].Fd = i
+	}
+}
+
 func NewMqttConf() *MqttConf {
 	return &MqttConf{
 		MqttHost: "0.0.0.0",
