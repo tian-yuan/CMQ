@@ -6,6 +6,7 @@ import (
 	"time"
 	"CMQ/hub/proto/mqtt"
 	"github.com/sirupsen/logrus"
+	"CMQ/hub/topic"
 )
 
 const (
@@ -13,6 +14,7 @@ const (
 	activeState   = 1
 )
 
+var matcher topic.Matcher
 var ClientCtxs []ClientCtx
 
 func GetCtxForFd(fd int64) *ClientCtx {

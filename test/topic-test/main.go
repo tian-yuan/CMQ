@@ -18,4 +18,8 @@ func main() {
 		fmt.Printf("topic key : %d\n", key)
 		fmt.Printf("topic value : %s\n", value)
 	}
+	subs := topic.NewSubscription(1, "productKey/deviceName/ipc/+", "ipc")
+	m.Unsubscribe(subs)
+	sub = m.Lookup("productKey/deviceName/ipc/temprature")
+	fmt.Printf("match topic len : %d\n", len(sub))
 }

@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"CMQ/hub/util"
 	"sync"
+	"CMQ/hub/topic"
 )
 
 type MqttSvc struct {
@@ -14,6 +15,8 @@ type MqttSvc struct {
 	w *sync.WaitGroup
 
 	tcp net.Listener
+
+	m topic.Matcher
 
 	StopCh chan struct{}
 }
@@ -28,6 +31,7 @@ func init() {
 	for i := 0; i < len(ClientCtxs); i += 1 {
 		ClientCtxs[i].Fd = i
 	}
+	matcher = topic.NewCSTrieMatcher()
 }
 
 func NewMqttConf() *MqttConf {
@@ -40,6 +44,7 @@ func NewMqttConf() *MqttConf {
 func NewMqttSvc(conf *MqttConf) *MqttSvc {
 	return &MqttSvc {
 		Conf: conf,
+		m: topic.NewCSTrieMatcher(),
 		StopCh:  make(chan struct{}),
 	}
 }

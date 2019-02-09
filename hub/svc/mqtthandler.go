@@ -8,6 +8,7 @@ import (
 	"time"
 	"CMQ/hub/proto/mqtt"
 	"errors"
+	topic "CMQ/hub/topic"
 )
 
 func init() {
@@ -204,6 +205,23 @@ func (ctx *ClientCtx) publishForward(p *mqtt.PublishPacket) error {
 		logrus.Errorf("Qos 2 is not supported")
 		return errors.New("Qos 2 is not supported")
 	} else if p.Header.Qos() == 1 {
+		topic := p.Topic
+		subs := matcher.Lookup(topic)
+		logrus.Infof("topic : %s match subscriber size : %d", topic, len(subs))
+		for _, subFd := range subs {
+			// send data to fd
+			destCtx := GetCtxForFd(int64(subFd.(int)))
+			if destCtx != nil {
+				h := mqtt.NewPublishPacketTypeHeader(1, defaultDup, defaultRetain)
+				pktId := destCtx.GetPacketId()
+
+				p := mqtt.NewPublishPacket(h, topic, pktId, p.Payload)
+				destCtx.publish(p)
+			} else {
+				logrus.Infof("topic : %s is subscribed by nobody", topic)
+			}
+		}
+
 		puback := mqtt.NewPubackPacket(p.PacketId)
 
 		ctx.Mux.Lock()
@@ -255,6 +273,10 @@ func (ctx *ClientCtx) handleSubscribePacket(p *mqtt.SubscribePacket) error {
 	}
 
 	codes := make([]int8, 2)
+	for _, topic := range p.Topics {
+		logrus.Infof("subscribe topic : %s, fd : %d", topic, ctx.Fd)
+		matcher.Subscribe(topic, ctx.Fd)
+	}
 
 	// if internal call error, set codes to -2
 	if codes == nil {
@@ -288,6 +310,10 @@ func (ctx *ClientCtx) handleUnsubPacket(p *mqtt.UnsubscribePacket) error {
 		logrus.Error("Receive unsub before connect")
 		ctx.exitCode = ecInvalidProtocol
 		return errors.New("Client has not been connected before")
+	}
+
+	for _, topicName := range p.Topics {
+		matcher.Unsubscribe(topic.NewSubscription(0, topicName, ctx.Fd))
 	}
 
 	var e = errors.New("")
@@ -335,15 +361,15 @@ func (ctx *ClientCtx) handleDisconnectPacket(p *mqtt.DisconnectPacket) error {
 const defaultDup = false
 const defaultRetain = false
 
-func (ctx *ClientCtx) publish(p *mqtt.PublishPacket, deviceName string, productKey string) int {
+func (ctx *ClientCtx) publish(p *mqtt.PublishPacket) int {
 	if e := p.Encode(&ctx.encoder); e != nil {
 		ctx.encoder.ResetState()
-		logrus.Errorf("Encode payload error: %v, %s, %s", e, deviceName, productKey)
+		logrus.Errorf("Encode payload error: %v", e)
 		return rcEncodeError
 	}
 
 	if e := ctx.encoder.WriteTo(ctx.Conn, 5 * time.Second); e != nil {
-		logrus.Errorf("Push message error: %v, %s, %s", e, deviceName, productKey)
+		logrus.Errorf("Push message error: %v", e)
 		return rcNetworkError
 	}
 

@@ -28,3 +28,11 @@ type Matcher interface {
 	// Lookup returns the Subscribers for the given topic.
 	Lookup(topic string) []Subscriber
 }
+
+func NewSubscription(id uint32, topic string, subscriber Subscriber) *Subscription {
+	return &Subscription{
+		id: id,
+		topic: topic,
+		subscriber: subscriber,
+	}
+}
