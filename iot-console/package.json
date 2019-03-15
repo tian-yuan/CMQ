@@ -1,0 +1,29 @@
+{
+  "name": "vusion-app",
+  "private": true,
+  "scripts": {
+    "dll": "webpack --config webpack.dll.config.js",
+    "precommit": "bash node_modules/vusion-hooks/pre-commit"
+  },
+  "dependencies": {
+    "babel-polyfill": "^6.26.0",
+    "cloud-ui.vusion": "~0.3.8",
+    "vue": "^2.5.0",
+    "vue-router": "^3.0.0",
+    "vusion-utils": "^0.2.2",
+    "whatwg-fetch": "^2.0.3"
+  },
+  "devDependencies": {
+    "add-asset-html-webpack-plugin": "^2.1.3",
+    "babel-core": "^6.26.0",
+    "babel-plugin-istanbul": "^4.1.5",
+    "babel-preset-env": "^1.6.0",
+    "babel-preset-stage-2": "^6.24.1",
+    "eslint": "^4.13.1",
+    "eslint-config-vusion": "^2.0.3",
+    "html-webpack-plugin": "^3.0.7",
+    "husky": "^0.13.3",
+    "vusion-hooks": "^0.1.0",
+    "webpack": "^3.11.0"
+  }
+}

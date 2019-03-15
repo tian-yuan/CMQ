@@ -1,0 +1,19 @@
+@import 'cloud-ui.vusion/src/base/global.css';
+
+$brand-primary: #1ba67e;
+
+/* Swatch Colors */
+$turquoise: #1abc9c;
+$green-sea: #16a085;
+
+$emerald: #2ecc71;
+$nephritis: #27ae60;
+
+$peter-river: #3498db;
+$belize-hole: #2980b9;
+
+/* Z-Index */
+$z-index-modal: 1000;
+$z-index-plugin: 100;
+$z-index-layout: 10;
+$z-index-base: 1;

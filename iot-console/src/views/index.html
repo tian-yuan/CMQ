@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <div id="app"><router-view></router-view></div>
+</body>
+</html>
