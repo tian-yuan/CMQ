@@ -1,14 +1,14 @@
 package main
 
 import (
-    "github.com/spf13/viper"
-    _ "github.com/heralight/logrus_mate/hooks/file"
-    "github.com/sirupsen/logrus"
+	_ "github.com/heralight/logrus_mate/hooks/file"
+	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 
-    "fmt"
-    "github.com/CMQ/util"
-    "runtime"
-	"github.com/CMQ/topic-manager/commands"
+	"fmt"
+	"github.com/tian-yuan/CMQ/topic-manager/commands"
+	"github.com/tian-yuan/CMQ/util"
+	"runtime"
 )
 
 func initLogger() {

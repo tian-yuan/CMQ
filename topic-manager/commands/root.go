@@ -6,8 +6,7 @@ import (
 )
 
 func init()  {
-	rootCmd.AddCommand(mqttCmd)
-	rootCmd.AddCommand(coapCmd)
+	rootCmd.AddCommand(httpCmd)
 }
 
 var rootCmd = &cobra.Command{

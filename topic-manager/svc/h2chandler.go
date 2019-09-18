@@ -1,7 +1,10 @@
 package svc
 
 import (
+	"bytes"
+	"github.com/RoaringBitmap/roaring"
 	"net/http"
+	"strconv"
 
 	"github.com/sirupsen/logrus"
 )
@@ -27,9 +30,15 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 
 func handleSubscribe(w http.ResponseWriter, r *http.Request) {
 	topic := r.Form.Get("Topic")
-	qos := r.Form.Get("Qos")
-	guid := r.Form.Get("Guid")
-	logrus.Infof("handle subscribe topic : %s, qos : %d", topic, qos)
+	qos, _ := strconv.Atoi(r.Form.Get("Qos"))
+	guid, _ := strconv.ParseUint(r.Form.Get("Guid"), 10, 64)
+	logrus.Infof("handle subscribe topic : %s, qos : %d, guid : %d", topic, qos, guid)
+	err := ctx.subscribe(topic, qos, uint32(guid))
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+	} else {
+		w.WriteHeader(http.StatusOK)
+	}
 }
 
 func handlePublish(w http.ResponseWriter, r *http.Request) {
@@ -37,9 +46,14 @@ func handlePublish(w http.ResponseWriter, r *http.Request) {
 	qos := r.Form.Get("Qos")
 	logrus.Infof("handle publish topic : %s, qos : %d", topic, qos)
 	subs := ctx.match(topic)
+	rb := roaring.BitmapOf()
 	for _, sub := range subs {
-		w.Write()
+		rb.Add(sub.(uint32))
 	}
+	buf := new(bytes.Buffer)
+	rb.WriteTo(buf)
+	w.Write(buf.Bytes())
+	w.WriteHeader(http.StatusOK)
 }
 
 func handleTopicLoad(w http.ResponseWriter, r *http.Request) {

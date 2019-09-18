@@ -1,10 +1,10 @@
 package commands
 
 import (
-	"github.com/spf13/cobra"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 
-	"github.com/CMQ/topic-manager/svc"
+	"github.com/tian-yuan/CMQ/topic-manager/svc"
 )
 
 var httpCmd = &cobra.Command{
