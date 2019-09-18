@@ -1,7 +1,7 @@
 package svc
 
 import (
-	"CMQ/hub/util"
+	"CMQ/util"
 	"net"
 	"github.com/sirupsen/logrus"
 	"math/rand"

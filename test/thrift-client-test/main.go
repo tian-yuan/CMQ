@@ -1,0 +1,1 @@
+package thrift_client_test

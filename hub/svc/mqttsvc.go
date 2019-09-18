@@ -4,7 +4,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"net"
 	"strconv"
-	"CMQ/hub/util"
+	"CMQ/util"
 	"sync"
 	"CMQ/hub/topic"
 )

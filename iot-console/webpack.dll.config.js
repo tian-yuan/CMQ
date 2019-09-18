@@ -3,7 +3,7 @@ const webpack = require('webpack');
 
 module.exports = {
     entry: {
-        vendor: ['babel-polyfill', 'whatwg-fetch', 'vue', 'vue-router'],
+        vendor: ['babel-polyfill', 'whatwg-fetch', 'lodash', 'vue', 'vue-i18n', 'vue-router'],
     },
     output: {
         filename: '[name].js',
@@ -14,6 +14,7 @@ module.exports = {
         alias: {
             vue$: path.resolve(__dirname, 'node_modules/vue/dist/vue.esm.js'),
             'vue-router$': path.resolve(__dirname, 'node_modules/vue-router/dist/vue-router.esm.js'),
+            'vue-i18n$': path.resolve(__dirname, 'node_modules/vue-i18n/dist/vue-i18n.esm.js'),
         },
     },
     plugins: [

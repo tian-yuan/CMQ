@@ -2,9 +2,10 @@
 <div :class="$style.root">
     <header :class="$style.head">
         <div :class="$style.wrap">
-            <u-logo :class="$style.left"></u-logo>
             <u-navbar>
                 <u-navbar-item to="/overview">Overview</u-navbar-item>
+                <!--<u-navbar-item to="/product">产品接入</u-navbar-item>-->
+                <!--<u-navbar-item to="/device">设备接入</u-navbar-item>-->
                 <div :class="$style.right">
                     <u-navbar-item href="https://vusion.github.io" target="_blank">文档</u-navbar-item>
                     <u-navbar-item href="https://github.com/tian-yuan" target="_blank">GitHub</u-navbar-item>

@@ -22,4 +22,15 @@ func main() {
 	m.Unsubscribe(subs)
 	sub = m.Lookup("productKey/deviceName/ipc/temprature")
 	fmt.Printf("match topic len : %d\n", len(sub))
+
+	rm := topic.NewOptimizedInvertedBitmapMatcher(5)
+	_, err := rm.Subscribe("forex/+", 0)
+	if err != nil {
+		fmt.Println("subscribe forex/+ failed.")
+	}
+	rm.Subscribe("stock/nyse", 1)
+	rm.Subscribe("index", 2)
+	rm.Subscribe("stock/+", 3)
+	rmSub := rm.Lookup("index")
+	fmt.Printf("stock/nyse match subscriber size : %d", len(rmSub))
 }
