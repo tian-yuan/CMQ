@@ -1,27 +1,19 @@
 package svc
 
 import (
-	"github.com/CMQ/topic-manager/topic"
-	"github.com/sirupsen/logrus"
+	_ "github.com/go-sql-driver/mysql"
 )
 
-var ctx Context
+var Ctx Context
 
 func init() {
 }
 
 type Context struct {
-	m topic.Matcher
+	Dbsvc *DatabaseSvc
 }
 
-func (ctx *Context) subscribe(topic string, qos int, guid uint32) error {
-	_, err := m.Subscribe(topic, guid)
-	if err != nil {
-		logrus.Infof("subscribe topic %s failed.", topic)
-	}
-	return err
-}
-
-func (ctx *Context) match(topic string) []Subscriber {
-	return m.Lookup(topic)
+type ErrInfo struct {
+	Code string `json:"Code"`
+	Message string `json:"Message"`
 }

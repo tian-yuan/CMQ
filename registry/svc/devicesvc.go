@@ -61,13 +61,13 @@ const deviceDatabase = "device_info"
 
 func (ds *DeviceSvc) Register(productKey string, deviceName string, sign string) (uint32, error) {
 	// query device from database
+	/*
 	queryStr := fmt.Sprintf("select * from %s where device_name = %s", deviceDatabase, deviceName)
 	rows, err := ctx.db.Query(queryStr)
 	if err != nil {
 		logrus.Error("query record failed.")
 		return 0, err
 	}
-	if len(rows) == 0 {
-		return 0, nil
-	}
+	*/
+	return 0, nil
 }

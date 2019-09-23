@@ -45,7 +45,6 @@ func (cs *H2cSvc) Start() {
 		"Port": cs.Conf.Port,
 	}).Info("start h2c server.")
 
-
 	addr := net.JoinHostPort(cs.Conf.Host, strconv.Itoa(int(cs.Conf.Port)))
 	logrus.Infof("h2c addr: %s", addr)
 	h2s := &http2.Server{}

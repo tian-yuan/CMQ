@@ -1,11 +1,10 @@
 package svc
 
 import (
+	"encoding/json"
+	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"net/http"
-	"github.com/google/uuid"
-	"encoding/json"
-	"bytes"
 )
 
 type ProductInfo struct {
@@ -16,6 +15,9 @@ type ProductInfo struct {
 	AccessPoints string `json:"AccessPoints"`
 	CreateAt string `json:"CreateAt"`
 	UpdateAt string `json:"UpdateAt"`
+
+	ProductSecret string
+	DeleteFlag int8
 }
 
 func handleCreateProduct(w http.ResponseWriter, r *http.Request) {
@@ -24,18 +26,31 @@ func handleCreateProduct(w http.ResponseWriter, r *http.Request) {
 	// create product
 	productInfo := &ProductInfo{
 		ProductKey: uuid.New().String(),
+		ProductSecret: uuid.New().String(),
 		ProductName: productName,
 		Description: productDesc,
 		DeviceCount: 0,
 		AccessPoints: "",
 		CreateAt: "",
 		UpdateAt: "",
+		DeleteFlag: 0,
 	}
 	logrus.Infof("create product name : %s, description : %s", productInfo.ProductName, productInfo.Description)
 	w.Header().Set("Content-Type", "application/json")
-	b, _ := json.Marshal(productInfo)
-	w.Write(b)
-	w.WriteHeader(http.StatusOK)
+	_, err := Ctx.Dbsvc.CreateProduct(*productInfo)
+	if err != nil {
+		errInfo := &ErrInfo{
+			Code: "500",
+			Message: err.Error(),
+		}
+		b, _ := json.Marshal(errInfo)
+		w.Write(b)
+		w.WriteHeader(http.StatusOK)
+	} else {
+		b, _ := json.Marshal(productInfo)
+	    w.Write(b)
+		w.WriteHeader(http.StatusOK)
+	}
 }
 
 func handleQueryProduct(w http.ResponseWriter, r *http.Request) {
