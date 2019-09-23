@@ -6,9 +6,9 @@ import (
     "github.com/sirupsen/logrus"
 
     "fmt"
-    "github.com/CMQ/util"
+    "github.com/tian-yuan/CMQ/util"
     "runtime"
-	"github.com/CMQ/controller/commands"
+	"github.com/tian-yuan/CMQ/controller/commands"
 )
 
 func initLogger() {
