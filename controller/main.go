@@ -8,7 +8,7 @@ import (
     "fmt"
     "github.com/CMQ/util"
     "runtime"
-	"github.com/CMQ/message-dispatcher/commands"
+	"github.com/CMQ/controller/commands"
 )
 
 func initLogger() {
@@ -43,6 +43,6 @@ func main() {
 	stopCh := util.SetupSignalHandler()
 	<-stopCh
 
-	logrus.Infof("message dispatcher stop")
+	logrus.Infof("hub stop")
 	commands.Stop()
 }
