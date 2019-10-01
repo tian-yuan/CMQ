@@ -2,22 +2,23 @@ package svc
 
 import (
 	"encoding/json"
+	"net/http"
+
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
-	"net/http"
 )
 
 type ProductInfo struct {
-	ProductKey string `json:"ProductKey"`
-	ProductName string `json:"ProductName"`
-	Description string `json:"Description"`
-	DeviceCount int32 `json:"DeviceCount"`
+	ProductKey   string `json:"ProductKey"`
+	ProductName  string `json:"ProductName"`
+	Description  string `json:"Description"`
+	DeviceCount  int32  `json:"DeviceCount"`
 	AccessPoints string `json:"AccessPoints"`
-	CreateAt string `json:"CreateAt"`
-	UpdateAt string `json:"UpdateAt"`
+	CreateAt     string `json:"CreateAt"`
+	UpdateAt     string `json:"UpdateAt"`
 
 	ProductSecret string
-	DeleteFlag int8
+	DeleteFlag    int8
 }
 
 func handleCreateProduct(w http.ResponseWriter, r *http.Request) {
@@ -25,22 +26,22 @@ func handleCreateProduct(w http.ResponseWriter, r *http.Request) {
 	productDesc := r.Form.Get("Description")
 	// create product
 	productInfo := &ProductInfo{
-		ProductKey: uuid.New().String(),
+		ProductKey:    uuid.New().String(),
 		ProductSecret: uuid.New().String(),
-		ProductName: productName,
-		Description: productDesc,
-		DeviceCount: 0,
-		AccessPoints: "",
-		CreateAt: "",
-		UpdateAt: "",
-		DeleteFlag: 0,
+		ProductName:   productName,
+		Description:   productDesc,
+		DeviceCount:   0,
+		AccessPoints:  "",
+		CreateAt:      "",
+		UpdateAt:      "",
+		DeleteFlag:    0,
 	}
 	logrus.Infof("create product name : %s, description : %s", productInfo.ProductName, productInfo.Description)
 	w.Header().Set("Content-Type", "application/json")
 	_, err := Ctx.Dbsvc.CreateProduct(*productInfo)
 	if err != nil {
 		errInfo := &ErrInfo{
-			Code: "500",
+			Code:    "500",
 			Message: err.Error(),
 		}
 		b, _ := json.Marshal(errInfo)
@@ -48,7 +49,7 @@ func handleCreateProduct(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	} else {
 		b, _ := json.Marshal(productInfo)
-	    w.Write(b)
+		w.Write(b)
 		w.WriteHeader(http.StatusOK)
 	}
 }

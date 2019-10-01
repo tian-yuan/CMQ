@@ -3,14 +3,15 @@ package svc
 import (
 	"database/sql"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"net"
 	"strconv"
+
+	"github.com/sirupsen/logrus"
 )
 
 type DatabaseConf struct {
-	Host string
-	Port uint16
+	Host     string
+	Port     uint16
 	Password string
 	Username string
 	Database string
@@ -18,10 +19,10 @@ type DatabaseConf struct {
 
 type DatabaseSvc struct {
 	Conf *DatabaseConf
-	Db *sql.DB
+	Db   *sql.DB
 }
 
-func NewDatabaseConfig() *DatabaseConf{
+func NewDatabaseConfig() *DatabaseConf {
 	return &DatabaseConf{
 		Host:     "",
 		Port:     0,
@@ -31,14 +32,14 @@ func NewDatabaseConfig() *DatabaseConf{
 	}
 }
 
-func NewDatabaseSvc(conf *DatabaseConf) *DatabaseSvc{
+func NewDatabaseSvc(conf *DatabaseConf) *DatabaseSvc {
 	return &DatabaseSvc{
 		Conf: conf,
 	}
 }
 
 func (ds *DatabaseSvc) Start() error {
-    logrus.WithFields(logrus.Fields{
+	logrus.WithFields(logrus.Fields{
 		"Host": ds.Conf.Host,
 		"Port": ds.Conf.Port,
 	}).Info("start h2c server.")
@@ -51,7 +52,7 @@ func (ds *DatabaseSvc) Start() error {
 	if err != nil {
 		logrus.Error("open mysql connection failed.")
 	}
-    return err
+	return err
 }
 
 func (ds *DatabaseSvc) Stop() {
@@ -62,8 +63,8 @@ const deviceDatabase = "device_info"
 
 func (ds *DatabaseSvc) CreateProduct(info ProductInfo) (uint32, error) {
 	// create product
-	createStr := fmt.Sprintf("insert into %s(product_key, product_name, product_secret, description, " +
-		"access_points, device_count, create_at, update_at, delete_flag) " +
+	createStr := fmt.Sprintf("insert into %s(product_key, product_name, product_secret, description, "+
+		"access_points, device_count, create_at, update_at, delete_flag) "+
 		"values(?, ?, ?, ?, ?, ?, ?, ?, ?)", deviceDatabase)
 	stmtIns, err := ds.Db.Prepare(createStr)
 	if err != nil {
@@ -85,4 +86,3 @@ func (ds *DatabaseSvc) CreateProduct(info ProductInfo) (uint32, error) {
 	}
 	return uint32(guid), nil
 }
-

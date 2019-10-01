@@ -2,16 +2,17 @@ package svc
 
 import (
 	"net/http"
+
 	"github.com/sirupsen/logrus"
 )
 
 type DeviceInfo struct {
-	ProductKey string `json:"ProductKey"`
-	DeviceName string `json:"DeviceName"`
+	ProductKey   string `json:"ProductKey"`
+	DeviceName   string `json:"DeviceName"`
 	DeviceSecret string `json:"DeviceSecret"`
-	State string `json:"State"`
-	CreateAt string `json:"CreateAt"`
-	UpdateAt string `json:"UpdateAt"`
+	State        string `json:"State"`
+	CreateAt     string `json:"CreateAt"`
+	UpdateAt     string `json:"UpdateAt"`
 	LastActiveAt string `json:"LastActiveAt"`
 }
 

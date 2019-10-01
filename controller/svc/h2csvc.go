@@ -1,11 +1,12 @@
 package svc
 
 import (
-	"sync"
 	"net"
-	"github.com/sirupsen/logrus"
-	"strconv"
 	"net/http"
+	"strconv"
+	"sync"
+
+	"github.com/sirupsen/logrus"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 )
@@ -33,9 +34,9 @@ func NewH2cConf() *H2cConf {
 }
 
 func NewH2cSvc(conf *H2cConf) *H2cSvc {
-	return &H2cSvc {
-		Conf: conf,
-		StopCh:  make(chan struct{}),
+	return &H2cSvc{
+		Conf:   conf,
+		StopCh: make(chan struct{}),
 	}
 }
 
