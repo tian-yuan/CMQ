@@ -10,10 +10,12 @@ require (
 	github.com/gogap/env_json v0.0.0-20150503135429-86150085ddbe // indirect
 	github.com/gogap/env_strings v0.0.1 // indirect
 	github.com/google/uuid v1.1.1
+	github.com/heralight/logrus_mate v1.0.1 // indirect
 	github.com/hoisie/redis v0.0.0-20160730154456-b5c6e81454e0 // indirect
 	github.com/sirupsen/logrus v1.2.0
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.4.0
+	github.com/tian-yuan/CMQ v0.0.0-20191003055427-8cbb29b6623b
 	golang.org/x/net v0.0.0-20190921015927-1a5e07d1ff72
 )
 

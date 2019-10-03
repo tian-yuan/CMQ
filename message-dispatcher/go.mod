@@ -9,7 +9,7 @@ require (
 	github.com/gogap/env_json v0.0.0-20150503135429-86150085ddbe // indirect
 	github.com/gogap/env_strings v0.0.1 // indirect
 	github.com/gogap/logrus_mate v1.1.0 // indirect
-	github.com/heralight/logrus_mate v1.0.0 // indirect
+	github.com/heralight/logrus_mate v1.0.1 // indirect
 	github.com/hoisie/redis v0.0.0-20160730154456-b5c6e81454e0 // indirect
 	github.com/micro/go-micro v1.11.0
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect

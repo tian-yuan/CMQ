@@ -3,7 +3,6 @@ package main
 
 import (
 	"github.com/spf13/viper"
-	_ "github.com/heralight/logrus_mate/hooks/file"
 	"github.com/sirupsen/logrus"
 
 	"fmt"

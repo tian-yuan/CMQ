@@ -4,7 +4,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
-	"github.com/tian-yuan/CMQ/topic-manager/svc"
+	"github.com/tian-yuan/CMQ/registry/svc"
 )
 
 var httpCmd = &cobra.Command{

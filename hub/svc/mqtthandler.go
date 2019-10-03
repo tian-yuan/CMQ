@@ -9,6 +9,8 @@ import (
 	"github.com/tian-yuan/CMQ/hub/proto/mqtt"
 	"errors"
 	topic "github.com/tian-yuan/CMQ/topic-manager/topic"
+	proto "github.com/tian-yuan/CMQ/iotpb"
+	"golang.org/x/net/context"
 )
 
 var matcher topic.Matcher
@@ -163,6 +165,21 @@ func (ctx *ClientCtx) handleConnectPacket(p *mqtt.ConnectPacket) error {
 	}
 
 	code := 0
+	// send connect packet to registry manager for verifying connect package
+	registerCli := proto.NewRegistryManagerService(util.REGISTER_MANAGER_SVC, rpcctx.registerSvc.Client())
+	conMsg := proto.ConnectMessageRequest{
+		ClientId: p.ClientId,
+		Username: p.Username,
+		Password: string(p.Password),
+		WillMsg: string(p.WillMessage),
+		WillTopic: p.WillTopic,
+	}
+	rsp, err := registerCli.Registry(context.TODO(), &conMsg)
+	if err != nil {
+		code = int(rsp.Code)
+		logrus.Errorf("register failed, error message : %s", rsp.Message)
+	}
+
 	connack := mqtt.NewConnackPacket(sessionPresent, byte(code))
 
 	// Connack is fixed size, so encode will always succeed

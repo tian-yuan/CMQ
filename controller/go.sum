@@ -58,6 +58,8 @@ github.com/hashicorp/hcl v1.0.0 h1:0Anlzjpi4vEasTeNFn2mLJgTSwt0+6sfsiTG8qcWGx4=
 github.com/hashicorp/hcl v1.0.0/go.mod h1:E5yfLk+7swimpb2L/Alb/PJmXilQ/rhwaUYs4T20WEQ=
 github.com/heralight/logrus_mate v1.0.0 h1:gZA5Macz4ecFOUJ/g4wxWtmxR7ejq+TC+bApACOUJ7k=
 github.com/heralight/logrus_mate v1.0.0/go.mod h1:FOZ+u9G+H/0QI9OJa6Y2yRO7Du0l5b8CIYbmQ3fGzD4=
+github.com/heralight/logrus_mate v1.0.1 h1:9qe6YNySFd2ERcJFLzC7q0E6HSdZW1afeuODz1+h4w0=
+github.com/heralight/logrus_mate v1.0.1/go.mod h1:FOZ+u9G+H/0QI9OJa6Y2yRO7Du0l5b8CIYbmQ3fGzD4=
 github.com/hoisie/redis v0.0.0-20160730154456-b5c6e81454e0 h1:mjZV3MTu2A5gwfT5G9IIiLGdwZNciyVq5qqnmJJZ2JI=
 github.com/hoisie/redis v0.0.0-20160730154456-b5c6e81454e0/go.mod h1:pMYMxVaKJqCDC1JUg/XbPJ4/fSazB25zORpFzqsIGIc=
 github.com/inconshreveable/mousetrap v1.0.0 h1:Z8tu5sraLXCXIcARxBp/8cbvlwVa7Z1NHg9XEKhtSvM=
@@ -122,6 +124,8 @@ github.com/stretchr/testify v1.2.2 h1:bSDNvY7ZPG5RlJ8otE/7V6gMiyenm9RtJ7IUVIAoJ1
 github.com/stretchr/testify v1.2.2/go.mod h1:a8OnRcib4nhh0OaRAV+Yts87kKdq0PP7pXfy6kDkUVs=
 github.com/tian-yuan/CMQ v0.0.0-20191003022111-3885fa6c31de h1:yAhf9sE5jE6NHaiBWdDj5gopY7Ip4XXo8fJ4zHnxV+0=
 github.com/tian-yuan/CMQ v0.0.0-20191003022111-3885fa6c31de/go.mod h1:fDXvmYBDyaVA1t0FEyHhHD+KPjqOzQI7ZLo7RI0QDf8=
+github.com/tian-yuan/CMQ v0.0.0-20191003055427-8cbb29b6623b h1:nRmV37lHRfxNEPDA30qZHWRJ67JKnJnVaCg3svy59OQ=
+github.com/tian-yuan/CMQ v0.0.0-20191003055427-8cbb29b6623b/go.mod h1:fDXvmYBDyaVA1t0FEyHhHD+KPjqOzQI7ZLo7RI0QDf8=
 github.com/tmc/grpc-websocket-proxy v0.0.0-20190109142713-0ad062ec5ee5/go.mod h1:ncp9v5uamzpCO7NfCPTXjqaC+bZgJeR0sMTm6dMHP7U=
 github.com/ugorji/go v1.1.4/go.mod h1:uQMGLiO92mf5W77hV/PUCpI3pbzQx3CRekS0kk+RGrc=
 github.com/ugorji/go/codec v0.0.0-20181204163529-d75b2dcb6bc8/go.mod h1:VFNgLljTbGfSG7qAOspJ7OScBnGdDN/yBr0sguwnwf0=
