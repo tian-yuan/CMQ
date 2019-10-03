@@ -9,14 +9,11 @@ require (
 	github.com/gogap/config v0.0.0-20190801085516-e664631840ac // indirect
 	github.com/gogap/env_json v0.0.0-20150503135429-86150085ddbe // indirect
 	github.com/gogap/env_strings v0.0.1 // indirect
-	github.com/gogap/logrus_mate v1.1.0 // indirect
 	github.com/google/uuid v1.1.1
-	github.com/heralight/logrus_mate v1.0.0
 	github.com/hoisie/redis v0.0.0-20160730154456-b5c6e81454e0 // indirect
 	github.com/sirupsen/logrus v1.2.0
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.4.0
-	github.com/tian-yuan/CMQ v0.0.0-20191003022111-3885fa6c31de
 	golang.org/x/net v0.0.0-20190921015927-1a5e07d1ff72
 )
 

@@ -1,7 +1,6 @@
 package main
 
 import (
-	_ "github.com/heralight/logrus_mate/hooks/file"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 
