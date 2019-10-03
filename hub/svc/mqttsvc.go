@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"github.com/tian-yuan/CMQ/util"
 	"sync"
-	"github.com/tian-yuan/CMQ/topic-manager/topic"
 )
 
 type MqttSvc struct {
@@ -16,7 +15,6 @@ type MqttSvc struct {
 
 	tcp net.Listener
 
-	m topic.Matcher
 
 	StopCh chan struct{}
 }
@@ -31,7 +29,6 @@ func init() {
 	for i := 0; i < len(ClientCtxs); i += 1 {
 		ClientCtxs[i].Fd = i
 	}
-	matcher = topic.NewCSTrieMatcher()
 }
 
 func NewMqttConf() *MqttConf {
@@ -44,7 +41,6 @@ func NewMqttConf() *MqttConf {
 func NewMqttSvc(conf *MqttConf) *MqttSvc {
 	return &MqttSvc {
 		Conf: conf,
-		m: topic.NewCSTrieMatcher(),
 		StopCh:  make(chan struct{}),
 	}
 }

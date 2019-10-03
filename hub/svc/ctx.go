@@ -6,7 +6,6 @@ import (
 	"time"
 	"github.com/tian-yuan/CMQ/hub/proto/mqtt"
 	"github.com/sirupsen/logrus"
-	micro "github.com/micro/go-micro"
 )
 
 const (

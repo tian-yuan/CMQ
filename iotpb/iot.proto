@@ -31,6 +31,15 @@ message SubscribeMessageResponse {
     string message = 4;
 }
 
+message UnSubscribeMessageRequest {
+    string topicFilter = 1;
+}
+
+message UnSubscribeMessageResponse {
+    int32 code = 1;
+    string message = 2;
+}
+
 message PublishMessageRequest {
     MessageHeader header = 100;
 
@@ -50,6 +59,7 @@ message PublishMessageResponse {
 service MessageDispatcher {
 	rpc PublishMessage(PublishMessageRequest) returns (PublishMessageResponse) {}
     rpc Subscribe(SubscribeMessageRequest) returns (SubscribeMessageResponse) {}
+    rpc UnSubscribe(UnSubscribeMessageRequest) returns (UnSubscribeMessageResponse) {}
 }
 
 ///////////////////// publish engine service //////////////////////////////

@@ -5,6 +5,8 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/tian-yuan/CMQ/hub/svc"
+	"github.com/tian-yuan/CMQ/util"
+	"strings"
 )
 
 var mqttCmd = &cobra.Command{
@@ -17,5 +19,10 @@ var mqttCmd = &cobra.Command{
 		cmd.Flags().Uint16VarP(&conf.MqttPort, "mqttPort", "p", 1883, "mqtt hub bind port.")
 		mqttSvc := svc.NewMqttSvc(conf)
 		mqttSvc.Start()
+
+		var zkAddr string
+		cmd.Flags().StringVarP(&zkAddr, "zkAddress", "z", "127.0.0.1:2181", "zk address array")
+		zkAddrArr := strings.Split(zkAddr, ";")
+		util.Ctx.InitRegisterSvc(zkAddrArr)
 	},
 }

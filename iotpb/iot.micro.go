@@ -36,6 +36,7 @@ var _ server.Option
 type MessageDispatcherService interface {
 	PublishMessage(ctx context.Context, in *PublishMessageRequest, opts ...client.CallOption) (*PublishMessageResponse, error)
 	Subscribe(ctx context.Context, in *SubscribeMessageRequest, opts ...client.CallOption) (*SubscribeMessageResponse, error)
+	UnSubscribe(ctx context.Context, in *UnSubscribeMessageRequest, opts ...client.CallOption) (*UnSubscribeMessageResponse, error)
 }
 
 type messageDispatcherService struct {
@@ -76,17 +77,29 @@ func (c *messageDispatcherService) Subscribe(ctx context.Context, in *SubscribeM
 	return out, nil
 }
 
+func (c *messageDispatcherService) UnSubscribe(ctx context.Context, in *UnSubscribeMessageRequest, opts ...client.CallOption) (*UnSubscribeMessageResponse, error) {
+	req := c.c.NewRequest(c.name, "MessageDispatcher.UnSubscribe", in)
+	out := new(UnSubscribeMessageResponse)
+	err := c.c.Call(ctx, req, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // Server API for MessageDispatcher service
 
 type MessageDispatcherHandler interface {
 	PublishMessage(context.Context, *PublishMessageRequest, *PublishMessageResponse) error
 	Subscribe(context.Context, *SubscribeMessageRequest, *SubscribeMessageResponse) error
+	UnSubscribe(context.Context, *UnSubscribeMessageRequest, *UnSubscribeMessageResponse) error
 }
 
 func RegisterMessageDispatcherHandler(s server.Server, hdlr MessageDispatcherHandler, opts ...server.HandlerOption) error {
 	type messageDispatcher interface {
 		PublishMessage(ctx context.Context, in *PublishMessageRequest, out *PublishMessageResponse) error
 		Subscribe(ctx context.Context, in *SubscribeMessageRequest, out *SubscribeMessageResponse) error
+		UnSubscribe(ctx context.Context, in *UnSubscribeMessageRequest, out *UnSubscribeMessageResponse) error
 	}
 	type MessageDispatcher struct {
 		messageDispatcher
@@ -105,6 +118,10 @@ func (h *messageDispatcherHandler) PublishMessage(ctx context.Context, in *Publi
 
 func (h *messageDispatcherHandler) Subscribe(ctx context.Context, in *SubscribeMessageRequest, out *SubscribeMessageResponse) error {
 	return h.MessageDispatcherHandler.Subscribe(ctx, in, out)
+}
+
+func (h *messageDispatcherHandler) UnSubscribe(ctx context.Context, in *UnSubscribeMessageRequest, out *UnSubscribeMessageResponse) error {
+	return h.MessageDispatcherHandler.UnSubscribe(ctx, in, out)
 }
 
 // Client API for PublishEngine service

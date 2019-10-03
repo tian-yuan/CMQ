@@ -8,16 +8,13 @@ import (
 	"time"
 	"github.com/tian-yuan/CMQ/hub/proto/mqtt"
 	"errors"
-	topic "github.com/tian-yuan/CMQ/topic-manager/topic"
 	proto "github.com/tian-yuan/CMQ/iotpb"
 	"golang.org/x/net/context"
 )
 
-var matcher topic.Matcher
 
 func init() {
 	rand.Seed(time.Now().Unix())
-	matcher = topic.NewTrieMatcher()
 }
 
 func handleConnection(s *MqttSvc, c net.Conn, ws bool) {
@@ -166,7 +163,7 @@ func (ctx *ClientCtx) handleConnectPacket(p *mqtt.ConnectPacket) error {
 
 	code := 0
 	// send connect packet to registry manager for verifying connect package
-	registerCli := proto.NewRegistryManagerService(util.REGISTER_MANAGER_SVC, rpcctx.registerSvc.Client())
+	registerCli := proto.NewRegistryManagerService(util.REGISTER_MANAGER_SVC, util.Ctx.RegisterSvc.Client())
 	conMsg := proto.ConnectMessageRequest{
 		ClientId: p.ClientId,
 		Username: p.Username,
@@ -225,21 +222,14 @@ func (ctx *ClientCtx) publishForward(p *mqtt.PublishPacket) error {
 		logrus.Errorf("Qos 2 is not supported")
 		return errors.New("Qos 2 is not supported")
 	} else if p.Header.Qos() == 1 {
-		topic := p.Topic
-		subs := matcher.Lookup(topic)
-		logrus.Infof("topic : %s match subscriber size : %d", topic, len(subs))
-		for _, subFd := range subs {
-			// send data to fd
-			destCtx := GetCtxForFd(int64(subFd.(int)))
-			if destCtx != nil {
-				h := mqtt.NewPublishPacketTypeHeader(1, defaultDup, defaultRetain)
-				pktId := destCtx.GetPacketId()
-
-				p := mqtt.NewPublishPacket(h, topic, pktId, p.Payload)
-				destCtx.publish(p)
-			} else {
-				logrus.Infof("topic : %s is subscribed by nobody", topic)
-			}
+		pubEnginCli := proto.NewPublishEngineService(util.PUBLISH_ENGINE_SVC, util.Ctx.PubEngineSvc.Client())
+		pubMsg := proto.PublishMessageRequest{
+			Topic: p.Topic,
+			Payload: p.Payload,
+		}
+		rsp, err := pubEnginCli.PublishMessage(context.TODO(), &pubMsg)
+		if err != nil {
+			logrus.Errorf("register failed, error message : %s", rsp.Message)
 		}
 
 		puback := mqtt.NewPubackPacket(p.PacketId)
@@ -292,17 +282,21 @@ func (ctx *ClientCtx) handleSubscribePacket(p *mqtt.SubscribePacket) error {
 		return errors.New("Client has not been connected before")
 	}
 
-	codes := make([]int8, 2)
-	for _, topic := range p.Topics {
-		logrus.Infof("subscribe topic : %s, fd : %d", topic, ctx.Fd)
-		matcher.Subscribe(topic, ctx.Fd)
-	}
+	codes := make([]int8, len(p.Topics))
 
-	// if internal call error, set codes to -2
-	if codes == nil {
-		codes = make([]int8, len(p.Qoss))
-		for i, _ := range codes {
+	messageDispatcherCli := proto.NewMessageDispatcherService(util.MESSAGE_DISPATCHER_SVC,
+		util.Ctx.MessageDispatcherSvc.Client())
+	for i, _ := range p.Topics {
+		subMsg := proto.SubscribeMessageRequest {
+			TopicFilter: p.Topics[i],
+			Qos: int32(p.Qoss[i]),
+		}
+		rsp, err := messageDispatcherCli.Subscribe(context.TODO(), &subMsg)
+		if err != nil {
+			logrus.Errorf("register failed, error message : %s", rsp.Message)
 			codes[i] = -2
+		} else {
+			codes[i] = 0
 		}
 	}
 
@@ -332,8 +326,16 @@ func (ctx *ClientCtx) handleUnsubPacket(p *mqtt.UnsubscribePacket) error {
 		return errors.New("Client has not been connected before")
 	}
 
-	for _, topicName := range p.Topics {
-		matcher.Unsubscribe(topic.NewSubscription(0, topicName, ctx.Fd))
+	messageDispatcherCli := proto.NewMessageDispatcherService(util.MESSAGE_DISPATCHER_SVC,
+		util.Ctx.MessageDispatcherSvc.Client())
+	for i, _ := range p.Topics {
+		unSubMsg := proto.UnSubscribeMessageRequest {
+			TopicFilter: p.Topics[i],
+		}
+		rsp, err := messageDispatcherCli.UnSubscribe(context.TODO(), &unSubMsg)
+		if err != nil {
+			logrus.Errorf("register failed, error message : %s", rsp.Message)
+		}
 	}
 
 	var e = errors.New("")
