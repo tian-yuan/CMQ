@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/viper"
 
 	"fmt"
-	"github.com/tian-yuan/CMQ/topic-manager/commands"
+	"github.com/tian-yuan/CMQ/registry/commands"
 	"github.com/tian-yuan/CMQ/util"
 	"runtime"
 )

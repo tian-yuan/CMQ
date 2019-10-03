@@ -7,6 +7,7 @@ import (
 
 func init()  {
 	rootCmd.AddCommand(httpCmd)
+	rootCmd.AddCommand(rpccmd)
 }
 
 var rootCmd = &cobra.Command{
