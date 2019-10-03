@@ -4,7 +4,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/sirupsen/logrus"
 
-	"CMQ/hub/svc"
+	"github.com/tian-yuan/CMQ/hub/svc"
 )
 
 var coapCmd = &cobra.Command{

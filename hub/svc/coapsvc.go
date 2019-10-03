@@ -4,7 +4,7 @@ import (
 	"sync"
 	"net"
 	"github.com/sirupsen/logrus"
-	"CMQ/hub/proto/coap"
+	"github.com/tian-yuan/CMQ/hub/proto/coap"
 	"strconv"
 )
 

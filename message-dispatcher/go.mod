@@ -21,6 +21,15 @@ require (
 	golang.org/x/net v0.0.0-20190724013045-ca1201d0de80
 )
 
+exclude (
+	github.com/Sirupsen/logrus v1.1.0
+	github.com/Sirupsen/logrus v1.1.1
+	github.com/Sirupsen/logrus v1.2.0
+	github.com/Sirupsen/logrus v1.3.0
+	github.com/Sirupsen/logrus v1.4.0
+	github.com/Sirupsen/logrus v1.4.1
+)
+
 replace (
 	github.com/Sirupsen/logrus v1.0.5 => github.com/sirupsen/logrus v1.0.5
 	github.com/Sirupsen/logrus v1.3.0 => github.com/sirupsen/logrus v1.0.6

@@ -4,9 +4,9 @@ import (
 	"github.com/sirupsen/logrus"
 	"net"
 	"strconv"
-	"CMQ/util"
+	"github.com/tian-yuan/CMQ/util"
 	"sync"
-	"CMQ/hub/topic"
+	"github.com/tian-yuan/CMQ/topic-manager/topic"
 )
 
 type MqttSvc struct {

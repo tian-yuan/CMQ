@@ -1,18 +1,21 @@
 package svc
 
 import (
-	"CMQ/util"
+	"github.com/tian-yuan/CMQ/util"
 	"net"
 	"github.com/sirupsen/logrus"
 	"math/rand"
 	"time"
-	"CMQ/hub/proto/mqtt"
+	"github.com/tian-yuan/CMQ/hub/proto/mqtt"
 	"errors"
-	topic "CMQ/hub/topic"
+	topic "github.com/tian-yuan/CMQ/topic-manager/topic"
 )
+
+var matcher topic.Matcher
 
 func init() {
 	rand.Seed(time.Now().Unix())
+	matcher = topic.NewTrieMatcher()
 }
 
 func handleConnection(s *MqttSvc, c net.Conn, ws bool) {

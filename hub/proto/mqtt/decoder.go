@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 
-	"CMQ/hub/proto"
+	"github.com/tian-yuan/CMQ/hub/proto"
 	"github.com/sirupsen/logrus"
 )
 

@@ -7,8 +7,8 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"fmt"
-	"CMQ/util"
-	"CMQ/device/commands"
+	"github.com/tian-yuan/CMQ/util"
+	"github.com/tian-yuan/CMQ/device/commands"
 	"runtime"
 )
 
