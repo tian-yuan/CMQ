@@ -2,7 +2,7 @@ package svc
 
 import (
 	"context"
-	proto "github.com/tian-yuan/CMQ/iotpb"
+	proto "github.com/tian-yuan/iot-common/iotpb"
 	"github.com/sirupsen/logrus"
 )
 
@@ -17,5 +17,9 @@ func (h *rpchandler) PublishMessage(ctx context.Context, in *proto.PublishMessag
 }
 
 func (h *rpchandler) Subscribe(ctx context.Context, in *proto.SubscribeMessageRequest, out *proto.SubscribeMessageResponse) error {
+	return nil
+}
+
+func (h *rpchandler) UnSubscribe(ctx context.Context, in *proto.UnSubscribeMessageRequest, out *proto.UnSubscribeMessageResponse) error {
 	return nil
 }

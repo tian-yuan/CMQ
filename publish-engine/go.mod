@@ -1,4 +1,4 @@
-module github.com/tian-yuan/CMQ
+module github.com/tian-yuan/CMQ/publish-engine
 
 go 1.12
 

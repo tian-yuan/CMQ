@@ -5,8 +5,9 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/tian-yuan/CMQ/hub/svc"
-	"github.com/tian-yuan/CMQ/util"
+	"github.com/tian-yuan/iot-common/util"
 	"strings"
+	"time"
 )
 
 var mqttCmd = &cobra.Command{
@@ -22,7 +23,33 @@ var mqttCmd = &cobra.Command{
 
 		var zkAddr string
 		cmd.Flags().StringVarP(&zkAddr, "zkAddress", "z", "127.0.0.1:2181", "zk address array")
+		logrus.Infof("start discovery client, zk address : %s", zkAddr)
 		zkAddrArr := strings.Split(zkAddr, ";")
 		util.Ctx.InitRegisterSvc(zkAddrArr)
+		util.Ctx.InitPubEngineSvc(zkAddrArr)
+
+		var redisClusterAddr string
+		cmd.Flags().StringVarP(&redisClusterAddr, "redisClusterAddr", "r", "127.0.0.1:7000", "redis cluster address")
+		var reqTimeout time.Duration
+		cmd.Flags().DurationVarP(&reqTimeout, "redisReqTimeout", "t", 5 * time.Second, "redis request timeout")
+		var poolSize int32
+		cmd.Flags().Int32VarP(&poolSize, "redisPoolSize", "s", 5, "redis client pool size")
+		var redisSessionTimeout time.Duration
+		cmd.Flags().DurationVarP(&redisSessionTimeout, "redisSessionTimeout", "o", 20 * time.Minute, "redis session timeout")
+		var redisSessionRefresh time.Duration
+		cmd.Flags().DurationVarP(&redisSessionRefresh, "redisSessionRefresh", "f", 20 * time.Minute, "redis session refresh")
+		redisClient := util.GetClusterClient(redisClusterAddr, reqTimeout, int(poolSize))
+		svc.Global.RedisClient = redisClient
+		ss := util.NewRedisSessionStorage(redisClient)
+		svc.Global.SessionStorage = ss
+		svc.Global.ReqTimeOut = reqTimeout
+		svc.Global.RedisSessionTimeOut = redisSessionTimeout
+		svc.Global.RedisSessionRefresh = redisSessionRefresh
+
+		httpconf := svc.NewH2cConf()
+		cmd.Flags().StringVarP(&httpconf.Host, "Host", "h", "0.0.0.0", "http2 bind host address.")
+		cmd.Flags().Uint16VarP(&httpconf.Port, "Port", "hp", 9883, "http2 hub bind port.")
+		h2cSvc := svc.NewH2cSvc(httpconf)
+		h2cSvc.Start()
 	},
 }

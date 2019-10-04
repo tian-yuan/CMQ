@@ -1,15 +1,17 @@
 package svc
 
 import (
-	"github.com/tian-yuan/CMQ/util"
+	"github.com/tian-yuan/iot-common/util"
 	"net"
 	"github.com/sirupsen/logrus"
 	"math/rand"
 	"time"
 	"github.com/tian-yuan/CMQ/hub/proto/mqtt"
 	"errors"
-	proto "github.com/tian-yuan/CMQ/iotpb"
+	proto "github.com/tian-yuan/iot-common/iotpb"
 	"golang.org/x/net/context"
+	"fmt"
+	"strings"
 )
 
 
@@ -161,6 +163,18 @@ func (ctx *ClientCtx) handleConnectPacket(p *mqtt.ConnectPacket) error {
 		return errors.New("Client has connected")
 	}
 
+	productKey, err := getProductKey(p.Username)
+
+	if err != nil {
+		logrus.Errorf("Username is invalid: %s", p.Username)
+		ctx.exitCode = ecBadClientRequest
+		return err
+	}
+
+	deviceName := string(p.ClientId)
+	ctx.productKey = productKey
+	ctx.deviceName = deviceName
+
 	code := 0
 	// send connect packet to registry manager for verifying connect package
 	registerCli := proto.NewRegistryManagerService(util.REGISTER_MANAGER_SVC, util.Ctx.RegisterSvc.Client())
@@ -173,8 +187,10 @@ func (ctx *ClientCtx) handleConnectPacket(p *mqtt.ConnectPacket) error {
 	}
 	rsp, err := registerCli.Registry(context.TODO(), &conMsg)
 	if err != nil {
-		code = int(rsp.Code)
-		logrus.Errorf("register failed, error message : %s", rsp.Message)
+		code = -1
+		logrus.Errorf("register failed, error message : %s", err.Error())
+	} else {
+		logrus.Infof("register success, message : %s", rsp.Message)
 	}
 
 	connack := mqtt.NewConnackPacket(sessionPresent, byte(code))
@@ -211,10 +227,60 @@ func (ctx *ClientCtx) handleConnectPacket(p *mqtt.ConnectPacket) error {
 
 const clientSessionKeyNamespace = "C"
 
+func generateKey(productKey, deviceName string) string {
+	return fmt.Sprintf("%s:%s:%s", clientSessionKeyNamespace, productKey, deviceName)
+}
+
+func generateValue(prefix string, fd int) string {
+	return fmt.Sprintf("%s:%d", prefix, fd)
+}
+
+func getProductKey(username string) (string, error) {
+	ss := strings.Split(username, ":")
+	if len(ss) == 1 {
+		return username, nil
+	} else if len(ss) == 2 {
+		return ss[0], nil
+	}
+
+	return "", errors.New("Invalid username")
+}
+
+func refreshDelay() int64 {
+	return int64(Global.RedisSessionRefresh/time.Second) + int64(rand.Int()%randRange)
+}
+
 const randRange = 4 * 60 // 4 minutes
 
 func (ctx *ClientCtx) refreshSession() {
+	ctx.Mux.RLock()
+	if ctx.status != activeState {
+		ctx.Mux.RUnlock()
+		return
+	}
 
+	sessions := make(map[string]string, 1)
+	sessVal := ctx.sessionValue
+	if ctx.productKey != "" {
+		sessions[ctx.productKey] = ctx.deviceName
+	}
+	ctx.Mux.RUnlock()
+
+	sessionStorage := Global.SessionStorage
+
+	for productKey, deviceName := range sessions {
+		logrus.Infof("Refresh session: %s, %s", productKey, deviceName)
+
+		k := generateKey(productKey, deviceName)
+		oldSessionValue, err := sessionStorage.Refresh(k, sessVal, Global.RedisSessionTimeOut)
+		if err != nil {
+			logrus.Errorf("Session refresh error: %v, %s, %s", err, k, sessVal)
+		} else if oldSessionValue != "" {
+			logrus.Errorf("Session duplication, kick former, %s, %s, former: %s", k, sessVal, oldSessionValue)
+			//kickDupConnection(sessVal, productKey, deviceName, oldSessionValue)
+		}
+	}
+	ctx.nextRefresh = time.Now().Unix() + refreshDelay()
 }
 
 func (ctx *ClientCtx) publishForward(p *mqtt.PublishPacket) error {

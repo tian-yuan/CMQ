@@ -61,6 +61,8 @@ type ClientCtx struct {
 	// {{
 
 	Conn       net.Conn
+	productKey string
+	deviceName string
 	status     int
 	currentId  uint16
 	ws         bool
@@ -203,3 +205,75 @@ var (
 	rcUnknownServerError = 604
 	rcRpcContentError    = 605
 )
+
+func (ctx *ClientCtx) PublishMessage(deviceName string, productKey string,
+	msg string, topic string, qos int8) int {
+
+	logrus.Infof("Handle publish message, deviceName %s, productKey: %s", deviceName, productKey)
+
+	h := mqtt.NewPublishPacketTypeHeader(qos, defaultDup, defaultRetain)
+	pktId := ctx.GetPacketId()
+
+	var data []byte = []byte(msg)
+	p := mqtt.NewPublishPacket(h, topic, pktId, data)
+
+	var isOnline bool
+	var ret int = rcRequestOK
+	var pf chan int = nil
+
+	ctx.Mux.Lock()
+
+	isOnline = ctx.IsClientMatchedMasterLocked(deviceName, productKey)
+
+	if isOnline {
+		if qos == 1 {
+			pf = ctx.AddPendingPacket(pktId)
+		}
+
+		ret = ctx.publish(p, deviceName, productKey)
+
+		if ret != rcRequestOK {
+			logrus.Errorf("publish to client error, %s, %s", deviceName, productKey)
+			if qos == 1 {
+				ctx.AckPacket(pktId, ret)
+			}
+		}
+	} else {
+		logrus.Errorf("Client is not online: %s, %s", deviceName, productKey)
+		ret = rcClientNotOnline
+	}
+
+	ctx.Mux.Unlock()
+
+	if ret != rcRequestOK {
+		return ret
+	}
+
+	if qos == 1 {
+		select {
+		case ret := <-pf:
+			return ret
+		case <-time.After(2 * time.Minute):
+			ctx.AckPacket(pktId, rcRequstTimeout)
+			return rcRequstTimeout
+		}
+	}
+
+	return rcRequestOK
+}
+
+func (ctx *ClientCtx) publish(p *mqtt.PublishPacket, deviceName string, productKey string) int {
+	if e := p.Encode(&ctx.encoder); e != nil {
+		ctx.encoder.ResetState()
+		logrus.Errorf("Encode payload error: %v, %s, %s", e, deviceName, productKey)
+		return rcEncodeError
+	}
+
+	if e := ctx.encoder.WriteTo(ctx.Conn, 2 * time.Minute); e != nil {
+		logrus.Errorf("Push message error: %v, %s, %s", e, deviceName, productKey)
+		return rcNetworkError
+	}
+
+	return rcRequestOK
+}
+

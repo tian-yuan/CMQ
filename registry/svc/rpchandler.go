@@ -2,7 +2,7 @@ package svc
 
 import (
 	"context"
-	proto "github.com/tian-yuan/CMQ/iotpb"
+	proto "github.com/tian-yuan/iot-common/iotpb"
 	"github.com/sirupsen/logrus"
 )
 

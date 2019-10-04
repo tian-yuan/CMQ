@@ -6,7 +6,7 @@ import (
     "github.com/sirupsen/logrus"
 
     "fmt"
-    "github.com/tian-yuan/CMQ/util"
+    "github.com/tian-yuan/iot-common/util"
     "runtime"
 	"github.com/tian-yuan/CMQ/publish-engine/commands"
 )

@@ -2,9 +2,11 @@ package svc
 
 import (
 	"github.com/micro/go-micro"
-	proto "github.com/tian-yuan/CMQ/iotpb"
+	proto "github.com/tian-yuan/iot-common/iotpb"
 	"fmt"
-	"github.com/tian-yuan/CMQ/util"
+	"github.com/tian-yuan/iot-common/util"
+	"github.com/micro/go-micro/registry"
+	"github.com/micro/go-plugins/registry/zookeeper"
 )
 
 type RpcSvc struct {
@@ -15,10 +17,18 @@ func NewRpcSvc() *RpcSvc {
 	return &RpcSvc{}
 }
 
-func (svc *RpcSvc) Start() {
+func (svc *RpcSvc) Start(zkAddr []string) {
+	optFunc := func(opt *registry.Options) {
+		opt = &registry.Options {
+			Addrs: zkAddr,
+		}
+	}
+	registry := zookeeper.NewRegistry(optFunc)
+
 	// Create a new service. Optionally include some options here.
 	service := micro.NewService(
 		micro.Name(util.PUBLISH_ENGINE_SVC),
+		micro.Registry(registry),
 	)
 
 	// Init will parse the command line flags.
