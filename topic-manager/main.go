@@ -7,7 +7,7 @@ import (
 
 	"fmt"
 	"github.com/tian-yuan/CMQ/topic-manager/commands"
-	"github.com/tian-yuan/CMQ/util"
+	"github.com/tian-yuan/iot-common/util"
 	"runtime"
 )
 

@@ -96,12 +96,14 @@ func (ctx *ClientCtx) handleClient() {
 		}
 
 		now := time.Now().Unix()
-		if ctx.keepalive != 0 && now-ctx.lastReceived >= int64(ctx.keepalive*2) {
+		if ctx.keepalive != 0 && now - ctx.lastReceived >= int64(ctx.keepalive*2) {
+			logrus.Info("current session is timeout.")
 			ctx.exitCode = ecSessionTimeout
 			ctx.err = errors.New("Session timeout")
 			return
 		}
 
+		logrus.Infof("current session, now : %lld, next refresh : %lld", now, ctx.nextRefresh)
 		if now >= ctx.nextRefresh {
 			ctx.refreshSession()
 		}
@@ -215,6 +217,8 @@ func (ctx *ClientCtx) handleConnectPacket(p *mqtt.ConnectPacket) error {
 	}
 	ctx.hasConnected = true
 	ctx.keepalive = int(p.Keepalive)
+	ctx.sessionValue = generateValue(Global.SessionPrefix, ctx.Fd)
+	ctx.sessionKey = generateKey(rsp.Guid)
 
 	// After activate, ctx may be accessed by multi goroutines
 	ctx.Mux.Lock()
@@ -222,13 +226,18 @@ func (ctx *ClientCtx) handleConnectPacket(p *mqtt.ConnectPacket) error {
 	ctx.Mux.Unlock()
 
 	ctx.refreshSession()
+	UpdateDeviceInfo(rsp.Guid, DeviceInfo{
+		DeviceId: deviceName,
+		ProductKey: productKey,
+	})
+	UpdateGuidToDeviceIdMap(rsp.Guid, deviceName)
 	return nil
 }
 
 const clientSessionKeyNamespace = "C"
 
-func generateKey(productKey, deviceName string) string {
-	return fmt.Sprintf("%s:%s:%s", clientSessionKeyNamespace, productKey, deviceName)
+func generateKey(guid uint32) string {
+	return fmt.Sprintf("%s:%d", clientSessionKeyNamespace, guid)
 }
 
 func generateValue(prefix string, fd int) string {
@@ -253,8 +262,10 @@ func refreshDelay() int64 {
 const randRange = 4 * 60 // 4 minutes
 
 func (ctx *ClientCtx) refreshSession() {
+	logrus.Info("begin to refresh session.")
 	ctx.Mux.RLock()
 	if ctx.status != activeState {
+		logrus.Info("current client is not active.")
 		ctx.Mux.RUnlock()
 		return
 	}
@@ -271,7 +282,7 @@ func (ctx *ClientCtx) refreshSession() {
 	for productKey, deviceName := range sessions {
 		logrus.Infof("Refresh session: %s, %s", productKey, deviceName)
 
-		k := generateKey(productKey, deviceName)
+		k := generateKey(ctx.guid)
 		oldSessionValue, err := sessionStorage.Refresh(k, sessVal, Global.RedisSessionTimeOut)
 		if err != nil {
 			logrus.Errorf("Session refresh error: %v, %s, %s", err, k, sessVal)
@@ -448,18 +459,3 @@ func (ctx *ClientCtx) handleDisconnectPacket(p *mqtt.DisconnectPacket) error {
 
 const defaultDup = false
 const defaultRetain = false
-
-func (ctx *ClientCtx) publish(p *mqtt.PublishPacket) int {
-	if e := p.Encode(&ctx.encoder); e != nil {
-		ctx.encoder.ResetState()
-		logrus.Errorf("Encode payload error: %v", e)
-		return rcEncodeError
-	}
-
-	if e := ctx.encoder.WriteTo(ctx.Conn, 5 * time.Second); e != nil {
-		logrus.Errorf("Push message error: %v", e)
-		return rcNetworkError
-	}
-
-	return rcRequestOK
-}

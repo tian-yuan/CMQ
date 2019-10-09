@@ -2,7 +2,7 @@ package svc
 
 import (
 	"github.com/micro/go-micro"
-	proto "github.com/tian-yuan/CMQ/iotpb"
+	proto "github.com/tian-yuan/iot-common/iotpb"
 	"fmt"
 )
 

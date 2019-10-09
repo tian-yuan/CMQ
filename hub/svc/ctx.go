@@ -63,6 +63,7 @@ type ClientCtx struct {
 	Conn       net.Conn
 	productKey string
 	deviceName string
+	guid 		uint32
 	status     int
 	currentId  uint16
 	ws         bool

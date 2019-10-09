@@ -47,8 +47,9 @@ var mqttCmd = &cobra.Command{
 		svc.Global.RedisSessionRefresh = redisSessionRefresh
 
 		httpconf := svc.NewH2cConf()
-		cmd.Flags().StringVarP(&httpconf.Host, "Host", "h", "0.0.0.0", "http2 bind host address.")
-		cmd.Flags().Uint16VarP(&httpconf.Port, "Port", "hp", 9883, "http2 hub bind port.")
+		cmd.Flags().StringVarP(&httpconf.Host, "Host", "a", "0.0.0.0", "http2 bind host address.")
+		cmd.Flags().Uint16VarP(&httpconf.Port, "Port", "b", 9883, "http2 hub bind port.")
+		svc.Global.SessionPrefix = httpconf.Host + ":" + string(httpconf.Port)
 		h2cSvc := svc.NewH2cSvc(httpconf)
 		h2cSvc.Start()
 	},

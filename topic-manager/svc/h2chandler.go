@@ -33,7 +33,7 @@ func handleSubscribe(w http.ResponseWriter, r *http.Request) {
 	qos, _ := strconv.Atoi(r.Form.Get("Qos"))
 	guid, _ := strconv.ParseUint(r.Form.Get("Guid"), 10, 64)
 	logrus.Infof("handle subscribe topic : %s, qos : %d, guid : %d", topic, qos, guid)
-	err := ctx.subscribe(topic, qos, uint32(guid))
+	err := Ctx.Subscribe(topic, qos, uint32(guid))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 	} else {
@@ -45,7 +45,7 @@ func handlePublish(w http.ResponseWriter, r *http.Request) {
 	topic := r.Form.Get("Topic")
 	qos := r.Form.Get("Qos")
 	logrus.Infof("handle publish topic : %s, qos : %d", topic, qos)
-	subs := ctx.match(topic)
+	subs := Ctx.Match(topic)
 	rb := roaring.BitmapOf()
 	for _, sub := range subs {
 		rb.Add(sub.(uint32))

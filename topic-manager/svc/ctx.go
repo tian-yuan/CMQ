@@ -5,17 +5,17 @@ import (
 	"github.com/tian-yuan/CMQ/topic-manager/topic"
 )
 
-var ctx Context
+var Ctx Context
 
 func init() {
-	ctx.m = topic.NewCSTrieMatcher()
+	Ctx.m = topic.NewCSTrieMatcher()
 }
 
 type Context struct {
 	m topic.Matcher
 }
 
-func (ctx *Context) subscribe(topic string, qos int, guid uint32) error {
+func (ctx *Context) Subscribe(topic string, qos int, guid uint32) error {
 	_, err := ctx.m.Subscribe(topic, guid)
 	if err != nil {
 		logrus.Infof("subscribe topic %s failed.", topic)
@@ -23,6 +23,6 @@ func (ctx *Context) subscribe(topic string, qos int, guid uint32) error {
 	return err
 }
 
-func (ctx *Context) match(topic string) []topic.Subscriber {
+func (ctx *Context) Match(topic string) []topic.Subscriber {
 	return ctx.m.Lookup(topic)
 }
