@@ -11,6 +11,7 @@ replace (
 
 require (
 	github.com/go-akka/configuration v0.0.0-20190919102339-a31c845c4b1b // indirect
+	github.com/go-redis/redis v6.15.6+incompatible
 	github.com/go-sql-driver/mysql v1.4.1
 	github.com/gogap/config v0.0.0-20190801085516-e664631840ac // indirect
 	github.com/gogap/env_json v0.0.0-20150503135429-86150085ddbe // indirect
@@ -22,6 +23,6 @@ require (
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.4.0
-	github.com/tian-yuan/iot-common v0.0.0-20191004083311-f4c9549248c1
+	github.com/tian-yuan/iot-common v0.0.1
 	golang.org/x/net v0.0.0-20190724013045-ca1201d0de80
 )
