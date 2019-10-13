@@ -7,6 +7,7 @@ import (
 	"github.com/tian-yuan/iot-common/util"
 	"github.com/micro/go-micro/registry"
 	"github.com/micro/go-plugins/registry/zookeeper"
+	"time"
 )
 
 type RpcSvc struct {
@@ -29,6 +30,8 @@ func (svc *RpcSvc) Start(zkAddr []string) {
 	service := micro.NewService(
 		micro.Name(util.PUBLISH_ENGINE_SVC),
 		micro.Registry(registry),
+		micro.RegisterTTL(time.Second*30),
+		micro.RegisterInterval(time.Second*10),
 	)
 
 	// Init will parse the command line flags.

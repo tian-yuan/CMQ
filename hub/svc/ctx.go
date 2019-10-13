@@ -264,6 +264,7 @@ func (ctx *ClientCtx) PublishMessage(deviceName string, productKey string,
 }
 
 func (ctx *ClientCtx) publish(p *mqtt.PublishPacket, deviceName string, productKey string) int {
+	logrus.Infof("publish message to client : %s, payload : %s", p.Topic, string(p.Payload))
 	if e := p.Encode(&ctx.encoder); e != nil {
 		ctx.encoder.ResetState()
 		logrus.Errorf("Encode payload error: %v, %s, %s", e, deviceName, productKey)

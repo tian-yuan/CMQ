@@ -16,7 +16,7 @@ const publishPath = "/v1/topic/publish"
 const topicLoad = "/v1/topic/load"
 
 func handleRequest(w http.ResponseWriter, r *http.Request) {
-	logrus.Info(w, "Hello, %v, http: %v", r.URL.Path, r.TLS == nil)
+	logrus.Infof("Hello, %s, http: %d", r.URL.Path, r.TLS == nil)
 	u := r.URL.EscapedPath()
 	if u == subscribePath {
 		logrus.Info("subscribe.")
@@ -25,6 +25,8 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		handlePublish(w, r)
 	} else if u == topicLoad {
 		handleTopicLoad(w, r)
+	} else {
+		logrus.Errorf("unkown path : %s", u)
 	}
 }
 

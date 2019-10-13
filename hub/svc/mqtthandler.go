@@ -150,6 +150,7 @@ func (ctx *ClientCtx) handlePacket(p interface{}) error {
 		return ctx.handleDisconnectPacket(pkt)
 	default:
 		// Pubrec, Pubrel, Pubcomp, Suback, Unsuback, Pingresp
+		logrus.Infof("do not support packet.")
 		ctx.exitCode = ecInvalidProtocol
 		return errors.New("Protocol volatilation")
 	}
@@ -301,12 +302,15 @@ func (ctx *ClientCtx) publishForward(p *mqtt.PublishPacket) error {
 	} else if p.Header.Qos() == 1 {
 		pubEnginCli := proto.NewPublishEngineService(util.PUBLISH_ENGINE_SVC, util.Ctx.PubEngineSvc.Client())
 		pubMsg := proto.PublishMessageRequest{
+			Header: &proto.MessageHeader {
+				Qos: int32(p.Header.Qos()),
+			},
 			Topic: p.Topic,
 			Payload: p.Payload,
 		}
-		rsp, err := pubEnginCli.PublishMessage(context.TODO(), &pubMsg)
+		_, err := pubEnginCli.PublishMessage(context.TODO(), &pubMsg)
 		if err != nil {
-			logrus.Errorf("register failed, error message : %s", rsp.Message)
+			logrus.Errorf("publish to publish engine failed, error message : %v.", err)
 		}
 
 		puback := mqtt.NewPubackPacket(p.PacketId)
@@ -368,12 +372,12 @@ func (ctx *ClientCtx) handleSubscribePacket(p *mqtt.SubscribePacket) error {
 			TopicFilter: p.Topics[i],
 			Qos: int32(p.Qoss[i]),
 		}
-		rsp, err := messageDispatcherCli.Subscribe(context.TODO(), &subMsg)
+		_, err := messageDispatcherCli.Subscribe(context.TODO(), &subMsg)
 		if err != nil {
-			logrus.Errorf("register failed, error message : %s", rsp.Message)
+			logrus.Error("send subscribe message to message dispatcher failed, error message.")
 			codes[i] = -2
 		} else {
-			codes[i] = 0
+			codes[i] = 1
 		}
 	}
 
@@ -388,6 +392,7 @@ func (ctx *ClientCtx) handleSubscribePacket(p *mqtt.SubscribePacket) error {
 
 	ctx.Mux.Unlock()
 
+	logrus.Info("subscribe success.")
 	if e != nil {
 		logrus.Infof("Write error: %s", e)
 		ctx.exitCode = ecWriteError
@@ -411,7 +416,7 @@ func (ctx *ClientCtx) handleUnsubPacket(p *mqtt.UnsubscribePacket) error {
 		}
 		rsp, err := messageDispatcherCli.UnSubscribe(context.TODO(), &unSubMsg)
 		if err != nil {
-			logrus.Errorf("register failed, error message : %s", rsp.Message)
+			logrus.Errorf("send unsubscribe message to message dispather failed, error message : %s", rsp.Message)
 		}
 	}
 

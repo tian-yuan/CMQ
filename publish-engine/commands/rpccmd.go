@@ -6,6 +6,7 @@ import (
 
 	"github.com/tian-yuan/CMQ/publish-engine/svc"
 	"strings"
+	"github.com/tian-yuan/iot-common/util"
 )
 
 var httpCmd = &cobra.Command{
@@ -17,6 +18,7 @@ var httpCmd = &cobra.Command{
 		cmd.Flags().StringVarP(&zkAddr, "zkAddress", "z", "127.0.0.1:2181", "zk address array")
 		logrus.Infof("start publish engine service, zk address : %s", zkAddr)
 		zkAddrArr := strings.Split(zkAddr, ";")
+		util.Ctx.InitMessageDispatcherSvc(zkAddrArr)
 
 		rpcSvc := svc.NewRpcSvc()
 		rpcSvc.Start(zkAddrArr)

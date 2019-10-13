@@ -13,6 +13,10 @@ type HttpClientFactory struct {
 
 var httpClientFactory HttpClientFactory
 
+func init() {
+	httpClientFactory.ClientMap = make(map[string]*http.Client)
+}
+
 // key: "ip:port"
 func GetH2client(key string) *http.Client {
 	cli, exist := httpClientFactory.ClientMap[key]

@@ -7,6 +7,7 @@ import (
 	"github.com/tian-yuan/CMQ/topic-manager/svc"
 	"time"
 	"github.com/tian-yuan/iot-common/util"
+	"strings"
 )
 
 var rpccmd = &cobra.Command{
@@ -14,8 +15,10 @@ var rpccmd = &cobra.Command{
 	Short: "start rpc server",
 	Run: func(cmd *cobra.Command, args []string) {
 		logrus.Info("Start rpc server message dispatcher v0.0.1 -- HEAD")
-		rpcSvc := svc.NewRpcSvc()
-		rpcSvc.Start()
+		var zkAddr string
+		cmd.Flags().StringVarP(&zkAddr, "zkAddress", "z", "127.0.0.1:2181", "zk address array")
+		logrus.Infof("start discovery client, zk address : %s", zkAddr)
+		zkAddrArr := strings.Split(zkAddr, ";")
 
 		var redisClusterAddr string
 		cmd.Flags().StringVarP(&redisClusterAddr, "redisClusterAddr", "r", "127.0.0.1:7000", "redis cluster address")
@@ -28,6 +31,14 @@ var rpccmd = &cobra.Command{
 		var redisSessionRefresh time.Duration
 		cmd.Flags().DurationVarP(&redisSessionRefresh, "redisSessionRefresh", "f", 20 * time.Minute, "redis session refresh")
 		redisClient := util.GetClusterClient(redisClusterAddr, reqTimeout, int(poolSize))
+		if redisClient == nil {
+			panic("init redis cluster client failed.")
+		} else {
+			logrus.Infof("init redis cluster client : %s success.", redisClusterAddr)
+		}
 		svc.Global.RedisClient = redisClient
+
+		rpcSvc := svc.NewRpcSvc()
+		rpcSvc.Start(zkAddrArr)
 	},
 }

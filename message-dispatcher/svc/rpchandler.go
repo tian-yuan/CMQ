@@ -18,7 +18,7 @@ func (h *rpchandler) PublishMessage(ctx context.Context, in *proto.PublishMessag
 		util.Ctx.TopicManagerSvc.Client())
 	out, err := topicMangerCli.PublishMessage(context.TODO(), in)
 	if err != nil {
-		logrus.Error("publish to topic manager failed.")
+		logrus.Errorf("publish to topic manager failed, error : %v.", err)
 	}
 	return err
 }
@@ -29,7 +29,7 @@ func (h *rpchandler) Subscribe(ctx context.Context, in *proto.SubscribeMessageRe
 		util.Ctx.TopicManagerSvc.Client())
 	out, err := topicMangerCli.Subscribe(context.TODO(), in)
 	if err != nil {
-		logrus.Error("subscribe to topic manager failed.")
+		logrus.Errorf("subscribe to topic manager failed, err : %v.", err)
 	}
 	return err
 }
@@ -39,7 +39,7 @@ func (h *rpchandler) UnSubscribe(ctx context.Context, in *proto.UnSubscribeMessa
 		util.Ctx.TopicManagerSvc.Client())
 	out, err := topicMangerCli.UnSubscribe(context.TODO(), in)
 	if err != nil {
-		logrus.Error("unsubscribe to topic manager failed.")
+		logrus.Errorf("unsubscribe to topic manager failed, err : %v.", err)
 	}
 	return err
 }

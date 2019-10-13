@@ -15,11 +15,13 @@ const healthz = "/v1/imd/healthz"
 const rpcPath = "/v1/imd/rpc"
 
 func handleRequest(w http.ResponseWriter, r *http.Request) {
-	logrus.Info(w, "Hello, %v, http: %v", r.URL.Path, r.TLS == nil)
+	logrus.Infof("Hello, %s, http: %d", r.URL.Path, r.TLS == nil)
 	u := r.URL.EscapedPath()
 	if u == publishPath {
 		logrus.Info("publish.")
 		handlePublish(w, r)
+	} else {
+		logrus.Errorf("unknown path : %s", u)
 	}
 }
 
@@ -51,7 +53,7 @@ func handlePublish(w http.ResponseWriter, r *http.Request) {
 		topic := r.FormValue("topic")
 		qosStr := r.FormValue("qos")
 
-		if deviceName == "" || productKey == "" || msg == "" ||
+		if msg == "" ||
 			topic == "" || qosStr == "" {
 			logrus.Warningf("Bad publish message request, %v", r)
 			w.WriteHeader(http.StatusBadRequest)
