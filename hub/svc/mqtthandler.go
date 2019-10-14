@@ -193,7 +193,7 @@ func (ctx *ClientCtx) handleConnectPacket(p *mqtt.ConnectPacket) error {
 		code = -1
 		logrus.Errorf("register failed, error message : %s", err.Error())
 	} else {
-		logrus.Infof("register success, message : %s", rsp.Message)
+		logrus.Infof("register success, guid : %d,  message : %s", rsp.Guid, rsp.Message)
 	}
 
 	connack := mqtt.NewConnackPacket(sessionPresent, byte(code))
@@ -220,6 +220,7 @@ func (ctx *ClientCtx) handleConnectPacket(p *mqtt.ConnectPacket) error {
 	ctx.keepalive = int(p.Keepalive)
 	ctx.sessionValue = generateValue(Global.SessionPrefix, ctx.Fd)
 	ctx.sessionKey = generateKey(rsp.Guid)
+	ctx.guid = rsp.Guid
 
 	// After activate, ctx may be accessed by multi goroutines
 	ctx.Mux.Lock()
@@ -281,10 +282,9 @@ func (ctx *ClientCtx) refreshSession() {
 	sessionStorage := Global.SessionStorage
 
 	for productKey, deviceName := range sessions {
-		logrus.Infof("Refresh session: %s, %s", productKey, deviceName)
-
 		k := generateKey(ctx.guid)
 		oldSessionValue, err := sessionStorage.Refresh(k, sessVal, Global.RedisSessionTimeOut)
+		logrus.Infof("Refresh session: %s, %s, %s, %s", productKey, deviceName, k, sessVal)
 		if err != nil {
 			logrus.Errorf("Session refresh error: %v, %s, %s", err, k, sessVal)
 		} else if oldSessionValue != "" {

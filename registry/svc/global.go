@@ -10,4 +10,6 @@ var Global = &struct {
 	ReqTimeOut time.Duration
 	RedisSessionTimeOut time.Duration
 	RedisSessionRefresh time.Duration
+
+	DeviceSvc *DeviceSvc
 } {}

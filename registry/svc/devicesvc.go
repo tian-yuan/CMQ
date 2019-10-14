@@ -6,6 +6,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"net"
 	"strconv"
+	"github.com/pkg/errors"
 )
 
 type DeviceConf struct {
@@ -37,14 +38,12 @@ func NewDeviceSvc(conf *DeviceConf) *DeviceSvc {
 }
 
 func (ds *DeviceSvc) Start() error {
-    logrus.WithFields(logrus.Fields{
-		"Host": ds.Conf.Host,
-		"Port": ds.Conf.Port,
-	}).Info("start h2c server.")
+	logrus.Infof("start mysql server. host : %s, port : %d, database : %s, username : %s, password : %s",
+		ds.Conf.Host, ds.Conf.Port, ds.Conf.Database, ds.Conf.Username, ds.Conf.Password)
 
 	addr := net.JoinHostPort(ds.Conf.Host, strconv.Itoa(int(ds.Conf.Port)))
 	// [username[:password]@][protocol[(address)]]/dbname[?param1=value1&...&paramN=valueN]
-	dsn := fmt.Sprintf("%s:%s@%s/%s", ds.Conf.Username, ds.Conf.Password, addr, ds.Conf.Database)
+	dsn := fmt.Sprintf("%s:%s@tcp(%s)/%s", ds.Conf.Username, ds.Conf.Password, addr, ds.Conf.Database)
 	db, err := sql.Open("mysql", dsn)
 	ctx.db = db
 	if err != nil {
@@ -61,13 +60,23 @@ const deviceDatabase = "device_info"
 
 func (ds *DeviceSvc) Register(productKey string, deviceName string, sign string) (uint32, error) {
 	// query device from database
-	/*
-	queryStr := fmt.Sprintf("select * from %s where device_name = %s", deviceDatabase, deviceName)
-	rows, err := ctx.db.Query(queryStr)
+	queryStr := fmt.Sprintf("select id, product_key, device_secret from %s where device_name = '%s'", deviceDatabase, deviceName)
+	logrus.Infof("query string : %s", queryStr)
+	var guid uint32
+	var key string
+	var deviceSecret string
+
+	rows:= ctx.db.QueryRow(queryStr)
+	if rows == nil {
+		logrus.Error("query row failed.")
+		return 0, errors.New("database internal error.")
+	}
+	err := rows.Scan(&guid, &key, &deviceSecret)
 	if err != nil {
 		logrus.Error("query record failed.")
 		return 0, err
 	}
-	*/
-	return 0, nil
+	rows.Scan(&guid, &key, &deviceSecret)
+	logrus.Infof("query record from database, guid : %d, product key : %s", guid, key)
+	return guid, nil
 }

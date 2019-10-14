@@ -39,7 +39,7 @@ CREATE TABLE `device_info` (
   `last_active_at` timestamp NULL DEFAULT NULL COMMENT '上次活跃时间',
   `apply_id` varchar(64) COLLATE utf8_bin DEFAULT NULL COMMENT '申请ID',
   `status` tinyint(1) NOT NULL DEFAULT 0 COMMENT '0-offline,1-oneline',
-  `delete_flag` tinyint(1) NOT NULL DEFAULT 0 COMMENT '0-valid,1-deleted'
+  `delete_flag` tinyint(1) NOT NULL DEFAULT 0 COMMENT '0-valid,1-deleted',
   PRIMARY KEY (`id`),
   UNIQUE KEY `device_name` (`device_name`)
 ) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8;
