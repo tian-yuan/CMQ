@@ -371,6 +371,7 @@ func (ctx *ClientCtx) handleSubscribePacket(p *mqtt.SubscribePacket) error {
 		subMsg := proto.SubscribeMessageRequest {
 			TopicFilter: p.Topics[i],
 			Qos: int32(p.Qoss[i]),
+			Guid: ctx.guid,
 		}
 		_, err := messageDispatcherCli.Subscribe(context.TODO(), &subMsg)
 		if err != nil {
