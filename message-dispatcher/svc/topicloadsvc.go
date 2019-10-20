@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"time"
 	"sync"
+	"github.com/samuel/go-zookeeper/zk"
 )
 
 type TopicLoadSvc struct {
@@ -25,13 +26,41 @@ type TopicLoadSvc struct {
 	ticker *time.Ticker
 
 	sync.RWMutex
+	lock *zk.Lock
 }
 
 func NewTopicLoadSvc() *TopicLoadSvc{
 	return &TopicLoadSvc{}
 }
 
+func (svc *TopicLoadSvc) startTopicController(zkAddr []string) {
+	for {
+		cli, _, err := zk.Connect(zkAddr, time.Second * 30)
+		if err != nil {
+			time.Sleep(time.Second)
+			logrus.Errorf("connect to zk failed : %v", err.Error())
+			continue
+		}
+		acls := zk.WorldACL(zk.PermAll)
+		svc.lock = zk.NewLock(cli, "/iot-message-dispatcher-controller", acls)
+		err = svc.lock.Lock()
+		if err != nil && err == zk.ErrDeadlock {
+			logrus.Info("already get controller lock.")
+			break
+		} else if err != nil && err != zk.ErrDeadlock {
+			time.Sleep(time.Second)
+			logrus.Errorf("create lock error : %v", err.Error())
+			continue
+		} else {
+			logrus.Info("get controller lock success.")
+			break
+		}
+	}
+}
+
 func (svc *TopicLoadSvc) Start(zkAddr []string) {
+	svc.startTopicController(zkAddr)
+
 	svc.Consistent = consistent.New()
 
 	optFunc := func(opt *registry.Options) {
@@ -68,6 +97,7 @@ func (svc *TopicLoadSvc) Start(zkAddr []string) {
 func (svc *TopicLoadSvc) Stop() {
 	svc.ticker.Stop()
 	svc.done <- true
+	svc.lock.Unlock()
 }
 
 func (svc *TopicLoadSvc) TopicReloadRequest(address string, seg string) error {

@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"github.com/spf13/cobra"
+	"github.com/tian-yuan/CMQ/message-dispatcher/svc"
 )
 
 func init()  {
@@ -21,5 +22,5 @@ func Execute() error {
 }
 
 func Stop() {
-
+	svc.Global.TopicLoadSvc.Stop()
 }

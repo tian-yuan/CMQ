@@ -23,7 +23,7 @@ var httpCmd = &cobra.Command{
 
 		topicSvc := svc.NewTopicLoadSvc()
 		svc.Global.TopicLoadSvc = topicSvc
-		topicSvc.Start(zkAddrArr)
+		go topicSvc.Start(zkAddrArr)
 
 		rpcSvc := svc.NewRpcSvc()
 		rpcSvc.Start(zkAddrArr)
