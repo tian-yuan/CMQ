@@ -21,6 +21,10 @@ var httpCmd = &cobra.Command{
 		zkAddrArr := strings.Split(zkAddr, ";")
 		util.Ctx.InitTopicManagerSvc(zkAddrArr)
 
+		topicSvc := svc.NewTopicLoadSvc()
+		svc.Global.TopicLoadSvc = topicSvc
+		topicSvc.Start(zkAddrArr)
+
 		rpcSvc := svc.NewRpcSvc()
 		rpcSvc.Start(zkAddrArr)
 	},

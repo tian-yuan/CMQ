@@ -78,7 +78,7 @@ func (h* rpchandler) PublishMessage(ctx context.Context, in *proto.PublishMessag
 }
 
 func (h* rpchandler) LoadSubTopic(ctx context.Context, in *proto.SubTopicLoadRequest, out *proto.SubTopicLoadResponse) error {
-	logrus.Info("handle load sub topic request.")
+	logrus.Infof("handle load sub topic request, product key : %s.", in.ProductKey)
 	return nil
 }
 
