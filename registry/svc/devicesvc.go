@@ -76,7 +76,6 @@ func (ds *DeviceSvc) Register(productKey string, deviceName string, sign string)
 		logrus.Error("query record failed.")
 		return 0, err
 	}
-	rows.Scan(&guid, &key, &deviceSecret)
 	logrus.Infof("query record from database, guid : %d, product key : %s", guid, key)
 	return guid, nil
 }

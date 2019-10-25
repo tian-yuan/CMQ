@@ -118,6 +118,7 @@ func (svc *TopicLoadSvc) TopicReloadRequest(address string, seg string) error {
 }
 
 func (svc *TopicLoadSvc) Subscribe(in *proto.SubscribeMessageRequest, out *proto.SubscribeMessageResponse) error {
+	// should send to topic acl and get topic id
 	addr, err := Global.TopicLoadSvc.Consistent.Get(fmt.Sprintf("%d", in.Guid))
 	if err != nil {
 		logrus.Errorf("get topic manager service failed.")
@@ -136,6 +137,7 @@ func (svc *TopicLoadSvc) Subscribe(in *proto.SubscribeMessageRequest, out *proto
 }
 
 func (svc *TopicLoadSvc) UnSubscribe(in *proto.UnSubscribeMessageRequest, out *proto.UnSubscribeMessageResponse) error {
+	// should send to topic acl and get topic id
 	addr, err := Global.TopicLoadSvc.Consistent.Get(fmt.Sprintf("%d", in.Guid))
 	if err != nil {
 		logrus.Errorf("get topic manager service failed.")

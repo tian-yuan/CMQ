@@ -44,3 +44,21 @@ CREATE TABLE `device_info` (
   UNIQUE KEY `device_name` (`device_name`)
 ) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8;
 ```
+
+##### Topic Subscribe
+```text
+DROP TABLE IF EXISTS `topic_subscription`;
+CREATE TABLE `topic_subscription` (
+  `id` int(32) NOT NULL AUTO_INCREMENT=1,
+  `product_key` varchar(64) COLLATE utf8_bin NOT NULL COMMENT '产品KEY',
+  `guid` int(32) NOT NULL COMMENT 'device guid',
+  `topic_filter` varchar(128) NOT NULL,
+  `qos` tinyint(4) NOT NULL DEFAULT 0 COMMENT '0-qos0, 1-qos1',
+  `topic_type` tinyint(4) NOT NULL DEFAULT 0 COMMENT '0-custom, 1-system, 2-ota',
+  `subscribe_time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `delete_flag` tinyint(1) NOT NULL DEFAULT '0' COMMENT '0-valid, 1-deleted',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `device_topic_id` (`topic_filter`, `guid`),
+  KEY `device_guid` (`guid`)
+) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8;
+```
