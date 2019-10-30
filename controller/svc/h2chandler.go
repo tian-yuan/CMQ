@@ -37,7 +37,7 @@ const publishMessage = "PublishMessage"
 const queryMessage = "QueryMessage"
 
 func handleRequest(w http.ResponseWriter, r *http.Request) {
-	logrus.Info(w, "Hello, %v, http: %v", r.URL.Path, r.TLS == nil)
+	logrus.Infof("Hello, %v, http: %v", r.URL.Path, r.TLS == nil)
 	action := r.URL.Query().Get("Action")
 	if action == createProduct {
 		logrus.Info("create product.")

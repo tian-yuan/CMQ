@@ -17,13 +17,13 @@ type ProductInfo struct {
 	CreateAt     string `json:"CreateAt"`
 	UpdateAt     string `json:"UpdateAt"`
 
-	ProductSecret string
+	ProductSecret string `json:"ProductSecret,omitempty"`
 	DeleteFlag    int8
 }
 
 func handleCreateProduct(w http.ResponseWriter, r *http.Request) {
-	productName := r.Form.Get("ProductName")
-	productDesc := r.Form.Get("Description")
+	productName := r.URL.Query().Get("ProductName")
+	productDesc := r.URL.Query().Get("Description")
 	// create product
 	productInfo := &ProductInfo{
 		ProductKey:    uuid.New().String(),
@@ -55,6 +55,24 @@ func handleCreateProduct(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleQueryProduct(w http.ResponseWriter, r *http.Request) {
+	productKey := r.URL.Query().Get("ProductKey")
+	logrus.Infof("query product info, product key : %s", productKey)
+	w.Header().Set("Content-Type", "application/json")
+	productInfo, err := Ctx.Dbsvc.QueryProductInfo(productKey)
+	if err != nil {
+		errInfo := &ErrInfo{
+			Code:    "500",
+			Message: err.Error(),
+		}
+		b, _ := json.Marshal(errInfo)
+		w.Write(b)
+		w.WriteHeader(http.StatusOK)
+	} else {
+		productInfo.ProductKey = productKey
+		b, _ := json.Marshal(productInfo)
+		w.Write(b)
+		w.WriteHeader(http.StatusOK)
+	}
 }
 
 func handleQueryProductList(w http.ResponseWriter, r *http.Request) {

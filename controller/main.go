@@ -9,7 +9,7 @@ import (
 	"runtime"
 
 	"github.com/tian-yuan/CMQ/controller/commands"
-	"github.com/tian-yuan/CMQ/util"
+	"github.com/tian-yuan/iot-common/util"
 )
 
 func initLogger() {

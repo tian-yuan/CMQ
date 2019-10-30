@@ -16,8 +16,7 @@ CREATE TABLE `product_info` (
   `update_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `delete_flag` tinyint(1) NOT NULL DEFAULT '0' COMMENT '0-valid, 1-deleted',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `product` (`product_key`),
-  UNIQUE KEY `tenant_product_name` (`tenant_id`, `product_name`)
+  UNIQUE KEY `product` (`product_key`)
 ) ENGINE=InnoDB AUTO_INCREMENT=0 DEFAULT CHARSET=utf8;
 ```
 
