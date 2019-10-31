@@ -105,3 +105,25 @@ func (ds *DatabaseSvc) QueryProductInfo(productKey string) (*ProductInfo, error)
 	logrus.Infof("query record from database, product key : %s", productKey)
 	return &productInfo, nil
 }
+
+func (ds *DatabaseSvc) QueryProductList(offset int32, limit int32, keyword string) ([]ProductInfo, error) {
+	var productInfoList []ProductInfo
+	queryStr := fmt.Sprintf("select product_key, product_name, description, access_points, device_count, create_at, update_at " +
+		"from %s order by id limit %d offset %d", productDatabase, limit, offset)
+	rows, err := ds.Db.Query(queryStr)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var productInfo ProductInfo
+		err := rows.Scan(&productInfo.ProductKey, &productInfo.ProductName, &productInfo.Description, &productInfo.AccessPoints,
+			&productInfo.DeviceCount, &productInfo.CreateAt, &productInfo.UpdateAt)
+		if err != nil {
+			return nil, err
+		}
+		productInfoList = append(productInfoList, productInfo)
+	}
+
+	return productInfoList, nil
+}

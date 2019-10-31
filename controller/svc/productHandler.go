@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
+	"strconv"
 )
 
 type ProductInfo struct {
@@ -76,6 +77,35 @@ func handleQueryProduct(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleQueryProductList(w http.ResponseWriter, r *http.Request) {
+	limit, _ := strconv.Atoi(r.URL.Query().Get("Limit"))
+	offset, _ := strconv.Atoi(r.URL.Query().Get("Offset"))
+	keyword := r.URL.Query().Get("Keyword")
+	logrus.Infof("query product list, limit : %d, offset : %d, keyword : %s", limit, offset, keyword)
+	w.Header().Set("Content-Type", "application/json")
+	productList, err := Ctx.Dbsvc.QueryProductList(int32(offset), int32(limit), keyword)
+	if err != nil {
+		errInfo := &ErrInfo{
+			Code:    "500",
+			Message: err.Error(),
+		}
+		b, _ := json.Marshal(errInfo)
+		w.Write(b)
+		w.WriteHeader(http.StatusOK)
+	} else {
+		type ProductListResp struct {
+			Code string
+			Message string
+			TotalCount int
+			ProductInfoList []ProductInfo
+		}
+		var productListResp ProductListResp
+		productListResp.Code = "200"
+		productListResp.TotalCount = len(productList)
+		productListResp.ProductInfoList = productList
+		b, _ := json.Marshal(productListResp)
+		w.Write(b)
+		w.WriteHeader(http.StatusOK)
+	}
 }
 
 func handleUpdateProduct(w http.ResponseWriter, r *http.Request) {
