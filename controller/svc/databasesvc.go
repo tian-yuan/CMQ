@@ -8,6 +8,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"errors"
+	"github.com/google/uuid"
 )
 
 type DatabaseConf struct {
@@ -126,4 +127,54 @@ func (ds *DatabaseSvc) QueryProductList(offset int32, limit int32, keyword strin
 	}
 
 	return productInfoList, nil
+}
+
+
+////////////////////////////////////////////////
+const deviceDatabase = "device_info"
+func (ds *DatabaseSvc) RegisterDevices(count int32, productKey string) (string, error) {
+	var i int32
+	for i = 0; i < count; i++ {
+		deviceName := uuid.New().String()
+		deviceSecret := uuid.New().String()
+		createStr := fmt.Sprintf("insert into %s(product_key, device_name, device_secret) values(?, ?, ?)",
+			deviceDatabase)
+		stmtIns, err := ds.Db.Prepare(createStr)
+		if err != nil {
+			logrus.Error("database prepare failed.")
+			return "", err
+		}
+		defer stmtIns.Close()
+		_, err = stmtIns.Exec(productKey, deviceName, deviceSecret)
+		if err != nil {
+			logrus.Error("create product failed.")
+			return "", err
+		}
+		return "", nil
+	}
+	return "", nil
+}
+
+func (ds *DatabaseSvc) QueryDeviceList(productKey string, offset int32, limit int32, keyword string) ([]DeviceInfo, error) {
+	var deviceInfoList []DeviceInfo
+	queryStr := fmt.Sprintf("select product_key, device_name, model, product_version, sdk_version, create_at, update_at, " +
+		"ifnull(last_active_at, ''), ifnull(apply_id, ''), status, delete_flag from %s where product_key='%s' order by id limit %d offset %d",
+			deviceDatabase, productKey, limit, offset)
+	rows, err := ds.Db.Query(queryStr)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var deviceInfo DeviceInfo
+		err := rows.Scan(&deviceInfo.ProductKey, &deviceInfo.DeviceName, &deviceInfo.Model, &deviceInfo.ProductVersion,
+			&deviceInfo.SdkVersion, &deviceInfo.CreateAt, &deviceInfo.UpdateAt, &deviceInfo.LastActiveAt,
+				&deviceInfo.ApplyId, &deviceInfo.Status, &deviceInfo.DeleteFlag)
+		if err != nil {
+			return nil, err
+		}
+		deviceInfoList = append(deviceInfoList, deviceInfo)
+	}
+
+	return deviceInfoList, nil
 }
