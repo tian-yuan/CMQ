@@ -34,7 +34,7 @@
     "mocha": "^4.1.0",
     "node-static": "^0.7.10",
     "nyc": "^11.4.1",
-    "open": "0.0.5",
+    "open": "7.0.0",
     "request": "^2.83.0",
     "unminified-webpack-plugin": "^1.4.2",
     "webpack": "^3.10.0",
