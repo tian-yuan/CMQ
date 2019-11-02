@@ -70,7 +70,15 @@ func handleQueryProduct(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	} else {
 		productInfo.ProductKey = productKey
-		b, _ := json.Marshal(productInfo)
+		type ProductResp struct {
+			Code string
+			Message string
+			ProductInfo ProductInfo
+		}
+		var productResp ProductResp
+		productResp.Code = "200"
+		productResp.ProductInfo = *productInfo
+		b, _ := json.Marshal(productResp)
 		w.Write(b)
 		w.WriteHeader(http.StatusOK)
 	}

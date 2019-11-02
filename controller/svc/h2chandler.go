@@ -39,6 +39,7 @@ const queryMessage = "QueryMessage"
 func handleRequest(w http.ResponseWriter, r *http.Request) {
 	logrus.Infof("Hello, %v, http: %v", r.URL.Path, r.TLS == nil)
 	action := r.URL.Query().Get("Action")
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	if action == createProduct {
 		logrus.Info("create product.")
 		handleCreateProduct(w, r)
