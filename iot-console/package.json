@@ -12,7 +12,7 @@
     "vue-router": "^3.0.0",
     "vusion-utils": "^0.2.2",
     "whatwg-fetch": "^2.0.3",
-    "axios": "^0.17.1"
+    "axios": "^0.19.0"
   },
   "devDependencies": {
     "add-asset-html-webpack-plugin": "^2.1.3",
