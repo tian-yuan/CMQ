@@ -60,7 +60,7 @@ const subTopicDatabase = "topic_subscription"
 
 func (ds *TopicSvc) Subscribe(topic string, guid uint32, qos int) (uint32, error) {
 	// query device from database
-	queryStr := fmt.Sprintf("select id, product_key, delete_flag from %s where guid = %d and topic_filter = %s",
+	queryStr := fmt.Sprintf("select id, product_key, delete_flag from %s where guid = %d and topic_filter = '%s'",
 		subTopicDatabase, guid, topic)
 	logrus.Infof("query string : %s", queryStr)
 	var topicId uint32
@@ -72,18 +72,20 @@ func (ds *TopicSvc) Subscribe(topic string, guid uint32, qos int) (uint32, error
 	switch {
 	case err == sql.ErrNoRows:
 		// we should insert one record into database
-		result, err := ctx.db.Exec(
-			"INSERT INTO $1 (product_key, guid, topic_filter, qos, topic_type) VALUES ($2, $3, $4, $5, $6)",
-			subTopicDatabase, productKey, guid, topic, qos, 0,
-		)
+		execStr := fmt.Sprintf("INSERT INTO %s (product_key, guid, topic_filter, qos, topic_type) VALUES ('%s', %d, '%s', %d, %d)",
+			subTopicDatabase, productKey, guid, topic, qos, 0)
+		result, err := ctx.db.Exec(execStr)
 		if err != nil {
+			logrus.Errorf("insert topic subscription failed, sql : %s, error : %s", execStr, err.Error())
 			return 0, err
 		} else {
 			topicId, err := result.LastInsertId()
+			logrus.Infof("insert topic subscription success, topic id : %d", topicId)
 			return uint32(topicId), err
 		}
 	case err != nil:
 		// database internal error
+		logrus.Errorf("query topic subscription record failed, error : %s", err.Error())
 		return 0, errors.New("database insternal error.")
 	default:
 		// we should update the delete_flag to zero
@@ -94,8 +96,10 @@ func (ds *TopicSvc) Subscribe(topic string, guid uint32, qos int) (uint32, error
 				subTopicDatabase, guid, topic,
 			)
 			if err != nil {
+				logrus.Errorf("update topic subscription failed, error : %s", err.Error())
 				return 0, err
 			} else {
+				logrus.Infof("update topic subscription success, topic id : %d", topicId)
 				return topicId, nil
 			}
 		}
