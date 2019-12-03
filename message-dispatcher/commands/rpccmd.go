@@ -26,6 +26,7 @@ var httpCmd = &cobra.Command{
 		go topicSvc.Start(zkAddrArr)
 
 		rpcSvc := svc.NewRpcSvc()
+		util.Ctx.InitTopicAclSvc(zkAddrArr)
 		rpcSvc.Start(zkAddrArr)
 	},
 }

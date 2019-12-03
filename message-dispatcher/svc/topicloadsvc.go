@@ -119,7 +119,18 @@ func (svc *TopicLoadSvc) TopicReloadRequest(address string, seg string) error {
 
 func (svc *TopicLoadSvc) Subscribe(in *proto.SubscribeMessageRequest, out *proto.SubscribeMessageResponse) error {
 	// should send to topic acl and get topic id
-	addr, err := Global.TopicLoadSvc.Consistent.Get(fmt.Sprintf("%d", in.Guid))
+	// should send topic subscribe request to acl to check the acl and obtain the topic id
+	topicAclCli := proto.NewTopicAclService(util.TOPIC_ACL_SVC,
+		util.Ctx.TopicManagerSvc.Client())
+	out, err := topicAclCli.Subscribe(context.TODO(), in)
+	if err != nil {
+		logrus.Error("publish subscribe message to topic acl service failed.")
+		return err
+	} else {
+		logrus.Infof("publish subscribe message to topic acl success, rsp : %s", out.Message)
+	}
+
+	addr, err := Global.TopicLoadSvc.Consistent.Get(fmt.Sprintf("%d", out.TopicId))
 	if err != nil {
 		logrus.Errorf("get topic manager service failed.")
 		return err
