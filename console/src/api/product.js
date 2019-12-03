@@ -9,3 +9,13 @@ export function getProductInfo(params) {
     params
   })
 }
+
+export function createProduct(params) {
+  params['Action'] = 'CreateProduct'
+  params['Version'] = '2019-04-10'
+  return request({
+    url: '/iothub',
+    method: 'get',
+    params
+  })
+}

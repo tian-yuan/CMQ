@@ -1,9 +1,8 @@
 <template>
   <div class="app-container">
     <div class="filter-container">
-      <el-input v-model="listQuery.DeviceId" :placeholder="$t('table.DeviceId')" style="width: 200px;" class="filter-item" @keyup.enter.native="handleFilter" />
-      <el-date-picker v-model="listQuery.Start" type="datetime" placeholder="Please pick a date"/>
-      <el-date-picker v-model="listQuery.End" type="datetime" placeholder="Please pick a date"/>
+      <el-input v-model="listQuery.Keyword" :placeholder="$t('Keyword')" style="width: 200px;" class="filter-item" @keyup.enter.native="handleFilter" />
+      <el-input v-model="listQuery.ProductKey" :placeholder="$t('ProductKey')" style="width: 200px;" class="filter-item" @keyup.enter.native="handleFilter" />
       <el-button v-waves class="filter-item" style="margin-left: 10px;margin-bottom: 10px;" type="primary" icon="el-icon-search" @click="handleFilter">
         {{ $t('table.search') }}
       </el-button>
@@ -18,53 +17,62 @@
       highlight-current-row
       style="width: 100%;"
     >
-      <el-table-column :label="$t('table.MessageId')" min-width="150px">
+      <el-table-column :label="$t('DeviceName')" min-width="150px">
         <template slot-scope="scope">
-          <span class="link-type" @click="handleMessageDetail(scope.row)">{{ scope.row.MessageId }}</span>
+          <span class="link-type" @click="handleDeviceDetail(scope.row)">{{ scope.row.DeviceName }}</span>
         </template>
       </el-table-column>
-      <el-table-column :label="$t('table.MessageType')" width="150px">
+      <el-table-column :label="$t('ProductKey')" width="150px">
         <template slot-scope="scope">
-          <span>{{ scope.row.MessageType }}</span>
+          <span>{{ scope.row.ProductKey }}</span>
         </template>
       </el-table-column>
-
-      <el-table-column :label="$t('table.Timestamp')" width="150px">
+      <el-table-column :label="$t('DeviceSecret')" width="150px">
         <template slot-scope="scope">
-          <span>{{ scope.row.Timestamp | parseTime('{y}-{m}-{d} {h}:{i}') }}</span>
+          <span>{{ scope.row.DeviceSecret }}</span>
         </template>
       </el-table-column>
-      <el-table-column :label="$t('table.Domain')" min-width="150px">
+      <el-table-column :label="$t('State')" width="150px">
         <template slot-scope="scope">
-          <span>{{ scope.row.Domain }}</span>
+          <span>{{ scope.row.State }}</span>
         </template>
       </el-table-column>
-      <el-table-column :label="$t('table.Platform')" width="110px">
+      <el-table-column :label="$t('CreateAt')" width="150px">
         <template slot-scope="scope">
-          <span>{{ scope.row.Platform }}</span>
+          <span>{{ scope.row.CreateAt | parseTime('{y}-{m}-{d} {h}:{i}') }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column :label="$t('LastActiveAt')" width="150px">
+        <template slot-scope="scope">
+          <span>{{ scope.row.LastActiveAt | parseTime('{y}-{m}-{d} {h}:{i}') }}</span>
+        </template>
+      </el-table-column>
+      <el-table-column :label="$t('UpdateAt')" width="150px">
+        <template slot-scope="scope">
+          <span>{{ scope.row.UpdateAt | parseTime('{y}-{m}-{d} {h}:{i}') }}</span>
         </template>
       </el-table-column>
     </el-table>
 
     <pagination v-show="total>0" :total="total" :page.sync="listQuery.page" :limit.sync="listQuery.limit" @pagination="getList" />
-    <el-dialog :visible.sync="dialogVisible" title="Message Detail">
-      <el-form ref="temp" :model="temp" label-width="120px">
-        <el-form-item label="Message Id">
-          <el-input v-model="temp.MessageId"/>
+
+    <el-dialog :visible.sync="dialogVisible" title="Device Detail">
+      <el-form ref="temp" :model="temp" label-width="200px">
+        <el-form-item label="DeviceName">
+          <el-input v-model="temp.DeviceName"/>
         </el-form-item>
       </el-form>
-      <json-editor ref="jsonEditor" v-model="temp.Content"/>
 
       <span slot="footer" class="dialog-footer">
-        <el-button type="primary" @click="dialogVisible = false">{{ $t('table.confirm') }}</el-button>
+        <el-button type="primary" @click="dialogVisible = false">{{ $t('confirm') }}</el-button>
       </span>
     </el-dialog>
   </div>
 </template>
 
 <script>
-import { getPushListByDeviceId } from '@/api/device'
-import { getMessageInfo } from '@/api/message'
+
+import { fetchDeviceList } from '@/api/devices'
 import waves from '@/directive/waves' // Waves directive
 import { parseTime } from '@/utils'
 import Pagination from '@/components/Pagination' // Secondary package based on el-pagination
@@ -75,6 +83,14 @@ export default {
   components: { Pagination, JsonEditor },
   directives: { waves },
   filters: {
+    statusFilter(status) {
+      const statusMap = {
+        published: 'success',
+        draft: 'info',
+        deleted: 'danger'
+      }
+      return statusMap[status]
+    },
     parseTime: function(timestamp, format) {
       return parseTime(timestamp, format)
     }
@@ -88,16 +104,15 @@ export default {
       listQuery: {
         page: 1,
         limit: 20,
-        Content: undefined,
-        Platform: undefined,
-        Channel: undefined,
-        MessageType: undefined,
-        title: undefined,
-        type: undefined
+        ProductKey: undefined,
+        Keyword: undefined
+      },
+      sortOptions: [{ label: 'ID Ascending', key: '+id' }, { label: 'ID Descending', key: '-id' }],
+      rules: {
+        title: [{ required: true, message: 'title is required', trigger: 'blur' }]
       },
       temp: {
-        MessageId: '',
-        Content: ''
+        DeviceName: ''
       },
       dialogVisible: false
     }
@@ -109,16 +124,15 @@ export default {
     getList() {
       this.listLoading = true
       var params = {
-        DeviceId: this.listQuery.DeviceId,
-        Start: new Date(this.listQuery.Start).getTime(),
-        End: new Date(this.listQuery.End).getTime(),
+        ProductKey: this.listQuery.ProductKey,
+        Keyword: this.listQuery.Keyword,
         Offset: (this.listQuery.page - 1) * this.listQuery.limit,
         Limit: this.listQuery.limit
       }
-      getPushListByDeviceId(params).then(response => {
-        this.list = response.data.BriefMessageInfoList
-        console.log('brief message info list : ', this.list)
-        this.total = response.data.TotalCount
+      fetchDeviceList(params).then(response => {
+        this.list = response.DeviceInfoList
+        console.log('device info list : ', this.list)
+        this.total = response.TotalCount
 
         // Just to simulate the time of the request
         setTimeout(() => {
@@ -130,13 +144,11 @@ export default {
       this.listQuery.page = 1
       this.getList()
     },
-    handleMessageDetail(row) {
-      var params = { 'MessageId': row.MessageId }
-      getMessageInfo(params).then(response => {
-        this.temp.MessageId = row.MessageId
-        this.temp.Content = JSON.parse(response.data)
-        this.dialogVisible = true
-      })
+    handleDeviceDetail(row) {
+      var params = { 'ProductKey': row.ProductKey, 'DeviceName': row.DeviceName }
+      console.log('params info : ', params)
+      this.temp.DeviceName = row.DeviceName
+      this.dialogVisible = true
     },
     formatJson(filterVal, jsonData) {
       return jsonData.map(v => filterVal.map(j => {
