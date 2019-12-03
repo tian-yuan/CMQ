@@ -38,8 +38,16 @@ const queryMessage = "QueryMessage"
 
 func handleRequest(w http.ResponseWriter, r *http.Request) {
 	logrus.Infof("Hello, %v, http: %v", r.URL.Path, r.TLS == nil)
+	if r.Method == http.MethodOptions {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "*")
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		return
+	}
 	action := r.URL.Query().Get("Action")
 	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "*")
 	if action == createProduct {
 		logrus.Info("create product.")
 		handleCreateProduct(w, r)
@@ -97,6 +105,9 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 		handlePublishMessage(w, r)
 	} else if action == queryMessage {
 		handleQueryMessage(w, r)
+	} else {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
 	}
 }
 

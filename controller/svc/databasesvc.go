@@ -157,7 +157,7 @@ func (ds *DatabaseSvc) RegisterDevices(count int32, productKey string) (string, 
 
 func (ds *DatabaseSvc) QueryDeviceList(productKey string, offset int32, limit int32, keyword string) ([]DeviceInfo, error) {
 	var deviceInfoList []DeviceInfo
-	queryStr := fmt.Sprintf("select product_key, device_name, model, product_version, sdk_version, create_at, update_at, " +
+	queryStr := fmt.Sprintf("select product_key, device_name, device_secret, model, product_version, sdk_version, create_at, update_at, " +
 		"ifnull(last_active_at, ''), ifnull(apply_id, ''), status, delete_flag from %s where product_key='%s' order by id limit %d offset %d",
 			deviceDatabase, productKey, limit, offset)
 	rows, err := ds.Db.Query(queryStr)
@@ -167,9 +167,9 @@ func (ds *DatabaseSvc) QueryDeviceList(productKey string, offset int32, limit in
 	defer rows.Close()
 	for rows.Next() {
 		var deviceInfo DeviceInfo
-		err := rows.Scan(&deviceInfo.ProductKey, &deviceInfo.DeviceName, &deviceInfo.Model, &deviceInfo.ProductVersion,
-			&deviceInfo.SdkVersion, &deviceInfo.CreateAt, &deviceInfo.UpdateAt, &deviceInfo.LastActiveAt,
-				&deviceInfo.ApplyId, &deviceInfo.Status, &deviceInfo.DeleteFlag)
+		err := rows.Scan(&deviceInfo.ProductKey, &deviceInfo.DeviceName, &deviceInfo.DeviceSecret, &deviceInfo.Model,
+			&deviceInfo.ProductVersion, &deviceInfo.SdkVersion, &deviceInfo.CreateAt, &deviceInfo.UpdateAt,
+				&deviceInfo.LastActiveAt, &deviceInfo.ApplyId, &deviceInfo.Status, &deviceInfo.DeleteFlag)
 		if err != nil {
 			return nil, err
 		}

@@ -7,6 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
 	"strconv"
+	"time"
 )
 
 type ProductInfo struct {
@@ -22,6 +23,12 @@ type ProductInfo struct {
 	DeleteFlag    int8
 }
 
+type ProductResp struct {
+	Code string
+	Message string
+	ProductInfo ProductInfo
+}
+
 func handleCreateProduct(w http.ResponseWriter, r *http.Request) {
 	productName := r.URL.Query().Get("ProductName")
 	productDesc := r.URL.Query().Get("Description")
@@ -33,8 +40,8 @@ func handleCreateProduct(w http.ResponseWriter, r *http.Request) {
 		Description:   productDesc,
 		DeviceCount:   0,
 		AccessPoints:  "",
-		CreateAt:      "",
-		UpdateAt:      "",
+		CreateAt:      time.Now().Format(time.RFC3339),
+		UpdateAt:      time.Now().Format(time.RFC3339),
 		DeleteFlag:    0,
 	}
 	logrus.Infof("create product name : %s, description : %s", productInfo.ProductName, productInfo.Description)
@@ -49,7 +56,10 @@ func handleCreateProduct(w http.ResponseWriter, r *http.Request) {
 		w.Write(b)
 		w.WriteHeader(http.StatusOK)
 	} else {
-		b, _ := json.Marshal(productInfo)
+		var productResp ProductResp
+		productResp.Code = "200"
+		productResp.ProductInfo = *productInfo
+		b, _ := json.Marshal(productResp)
 		w.Write(b)
 		w.WriteHeader(http.StatusOK)
 	}
@@ -70,11 +80,6 @@ func handleQueryProduct(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	} else {
 		productInfo.ProductKey = productKey
-		type ProductResp struct {
-			Code string
-			Message string
-			ProductInfo ProductInfo
-		}
 		var productResp ProductResp
 		productResp.Code = "200"
 		productResp.ProductInfo = *productInfo
