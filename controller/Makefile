@@ -1,5 +1,5 @@
 all:
-	go build -o ./bin/controller
+	go build -o ../bin/controller
 
 test:
 	go test -v ./

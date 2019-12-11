@@ -24,6 +24,6 @@ require (
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.4.0
-	github.com/tian-yuan/iot-common v0.0.1
+	github.com/tian-yuan/iot-common v0.0.3
 	golang.org/x/net v0.0.0-20190724013045-ca1201d0de80
 )

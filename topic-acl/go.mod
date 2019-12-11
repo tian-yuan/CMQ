@@ -31,7 +31,7 @@ require (
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.4.0
-	github.com/tian-yuan/iot-common v0.0.2
+	github.com/tian-yuan/iot-common v0.0.3
 	golang.org/x/mobile v0.0.0-20190806162312-597adff16ade // indirect
 	golang.org/x/sys v0.0.0-20190812073006-9eafafc0a87e // indirect
 	golang.org/x/tools v0.0.0-20190809145639-6d4652c779c4 // indirect

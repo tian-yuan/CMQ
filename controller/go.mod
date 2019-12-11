@@ -18,7 +18,7 @@ require (
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.4.0
 	github.com/tian-yuan/CMQ v0.0.0-20191003055427-8cbb29b6623b // indirect
-	github.com/tian-yuan/iot-common v0.0.2
+	github.com/tian-yuan/iot-common v0.0.3
 	golang.org/x/net v0.0.0-20191011234655-491137f69257
 )
 
