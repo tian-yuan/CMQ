@@ -1,19 +1,20 @@
 package svc
 
 import (
-	"github.com/micro/go-micro/registry"
-	"github.com/micro/go-plugins/registry/zookeeper"
-	"github.com/tian-yuan/iot-common/util"
-	"github.com/sirupsen/logrus"
+	"context"
+	"fmt"
+	"sync"
+	"time"
+
 	"github.com/micro/go-micro/client"
 	"github.com/micro/go-micro/client/selector"
-	proto "github.com/tian-yuan/iot-common/iotpb"
-	"context"
-	"github.com/tian-yuan/CMQ/message-dispatcher/consistent"
-	"fmt"
-	"time"
-	"sync"
+	"github.com/micro/go-micro/registry"
+	"github.com/micro/go-micro/util/log"
+	"github.com/micro/go-plugins/registry/zookeeper"
 	"github.com/samuel/go-zookeeper/zk"
+	"github.com/tian-yuan/CMQ/message-dispatcher/consistent"
+	proto "github.com/tian-yuan/iot-common/iotpb"
+	"github.com/tian-yuan/iot-common/util"
 )
 
 type TopicLoadSvc struct {
@@ -22,37 +23,37 @@ type TopicLoadSvc struct {
 	Consistent *consistent.Consistent
 
 	client client.Client
-	done chan bool
+	done   chan bool
 	ticker *time.Ticker
 
 	sync.RWMutex
 	lock *zk.Lock
 }
 
-func NewTopicLoadSvc() *TopicLoadSvc{
+func NewTopicLoadSvc() *TopicLoadSvc {
 	return &TopicLoadSvc{}
 }
 
 func (svc *TopicLoadSvc) startTopicController(zkAddr []string) {
 	for {
-		cli, _, err := zk.Connect(zkAddr, time.Second * 30)
+		cli, _, err := zk.Connect(zkAddr, time.Second*30)
 		if err != nil {
 			time.Sleep(time.Second)
-			logrus.Errorf("connect to zk failed : %v", err.Error())
+			log.Errorf("connect to zk failed : %v", err.Error())
 			continue
 		}
 		acls := zk.WorldACL(zk.PermAll)
 		svc.lock = zk.NewLock(cli, "/iot-message-dispatcher-controller", acls)
 		err = svc.lock.Lock()
 		if err != nil && err == zk.ErrDeadlock {
-			logrus.Info("already get controller lock.")
+			log.Info("already get controller lock.")
 			break
 		} else if err != nil && err != zk.ErrDeadlock {
 			time.Sleep(time.Second)
-			logrus.Errorf("create lock error : %v", err.Error())
+			log.Errorf("create lock error : %v", err.Error())
 			continue
 		} else {
-			logrus.Info("get controller lock success.")
+			log.Info("get controller lock success.")
 			break
 		}
 	}
@@ -64,7 +65,7 @@ func (svc *TopicLoadSvc) Start(zkAddr []string) {
 	svc.Consistent = consistent.New()
 
 	optFunc := func(opt *registry.Options) {
-		opt = &registry.Options {
+		opt = &registry.Options{
 			Addrs: zkAddr,
 		}
 	}
@@ -101,7 +102,7 @@ func (svc *TopicLoadSvc) Stop() {
 }
 
 func (svc *TopicLoadSvc) TopicReloadRequest(address string, seg string) error {
-	logrus.Infof("service address : %s, should load seg : %s", address, seg)
+	log.Infof("service address : %s, should load seg : %s", address, seg)
 	service := util.TOPIC_MANAGER_SVC
 	endpoint := "TopicManager.LoadSubTopic"
 	reqInstance := &proto.SubTopicLoadRequest{
@@ -111,7 +112,7 @@ func (svc *TopicLoadSvc) TopicReloadRequest(address string, seg string) error {
 	req := svc.client.NewRequest(service, endpoint, reqInstance)
 
 	if err := svc.client.Call(context.Background(), req, nil, client.WithAddress(address)); err != nil {
-		logrus.Errorf("call with address error", err)
+		log.Errorf("call with address error", err)
 		return err
 	}
 	return nil
@@ -124,15 +125,15 @@ func (svc *TopicLoadSvc) Subscribe(in *proto.SubscribeMessageRequest, out *proto
 		util.Ctx.TopicManagerSvc.Client())
 	out, err := topicAclCli.Subscribe(context.TODO(), in)
 	if err != nil {
-		logrus.Error("publish subscribe message to topic acl service failed.")
+		log.Error("publish subscribe message to topic acl service failed.")
 		return err
 	} else {
-		logrus.Infof("publish subscribe message to topic acl success, rsp : %s", out.Message)
+		log.Infof("publish subscribe message to topic acl success, rsp : %s", out.Message)
 	}
 
 	addr, err := Global.TopicLoadSvc.Consistent.Get(fmt.Sprintf("%d", out.TopicId))
 	if err != nil {
-		logrus.Errorf("get topic manager service failed.")
+		log.Errorf("get topic manager service failed.")
 		return err
 	}
 	service := util.TOPIC_MANAGER_SVC
@@ -141,7 +142,7 @@ func (svc *TopicLoadSvc) Subscribe(in *proto.SubscribeMessageRequest, out *proto
 	req := svc.client.NewRequest(service, endpoint, in)
 
 	if err := svc.client.Call(context.Background(), req, out, client.WithAddress(addr)); err != nil {
-		logrus.Errorf("call with address error", err)
+		log.Errorf("call with address error", err)
 		return err
 	}
 	return nil
@@ -151,7 +152,7 @@ func (svc *TopicLoadSvc) UnSubscribe(in *proto.UnSubscribeMessageRequest, out *p
 	// should send to topic acl and get topic id
 	addr, err := Global.TopicLoadSvc.Consistent.Get(fmt.Sprintf("%d", in.Guid))
 	if err != nil {
-		logrus.Errorf("get topic manager service failed.")
+		log.Errorf("get topic manager service failed.")
 		return err
 	}
 	service := util.TOPIC_MANAGER_SVC
@@ -160,7 +161,7 @@ func (svc *TopicLoadSvc) UnSubscribe(in *proto.UnSubscribeMessageRequest, out *p
 	req := svc.client.NewRequest(service, endpoint, in)
 
 	if err := svc.client.Call(context.Background(), req, out, client.WithAddress(addr)); err != nil {
-		logrus.Errorf("call with address error", err)
+		log.Errorf("call with address error", err)
 		return err
 	}
 	return nil
@@ -169,7 +170,7 @@ func (svc *TopicLoadSvc) UnSubscribe(in *proto.UnSubscribeMessageRequest, out *p
 func (svc *TopicLoadSvc) PublishMessage(in *proto.PublishMessageRequest, out *proto.PublishMessageResponse) error {
 	services, err := Global.TopicLoadSvc.ServiceCache.GetService(util.TOPIC_MANAGER_SVC)
 	if err != nil {
-		logrus.Errorf("get service for topic manager failed.", err)
+		log.Errorf("get service for topic manager failed.", err)
 		return err
 	}
 
@@ -185,7 +186,7 @@ func (svc *TopicLoadSvc) PublishMessage(in *proto.PublishMessageRequest, out *pr
 			req := svc.client.NewRequest(service, endpoint, in)
 
 			if err := svc.client.Call(context.Background(), req, out, client.WithAddress(node.Address)); err != nil {
-				logrus.Errorf("call with address error", err)
+				log.Errorf("call with address error", err)
 				// if qos is 1 or 2, we should add the message to queue
 			}
 		}
@@ -194,9 +195,9 @@ func (svc *TopicLoadSvc) PublishMessage(in *proto.PublishMessageRequest, out *pr
 }
 
 func handleServiceUpdate(service string, services []*registry.Service) {
-	logrus.Infof("handle service :%s update", service)
+	log.Infof("handle service :%s update", service)
 	if service != util.TOPIC_MANAGER_SVC {
-		logrus.Warnf("unkown service name : %s", service)
+		log.Infof("unkown service name : %s", service)
 		return
 	}
 
@@ -204,9 +205,10 @@ func handleServiceUpdate(service string, services []*registry.Service) {
 }
 
 const TOPIC_ID_RANGE = 20000
+
 func topicReload(services []*registry.Service) {
 	if services == nil || len(services) == 0 {
-		logrus.Warn("all service is down.")
+		log.Info("all service is down.")
 		return
 	}
 
@@ -223,7 +225,7 @@ func topicReload(services []*registry.Service) {
 	}
 	// get max topic id
 	var maxTopicId uint32
-	maxTopicId = 20 * 10000 + 1
+	maxTopicId = 20*10000 + 1
 	// send request to topic manager service
 	SegIdRange := maxTopicId / TOPIC_ID_RANGE
 	if (SegIdRange % TOPIC_ID_RANGE) > 0 {
@@ -237,7 +239,7 @@ func topicReload(services []*registry.Service) {
 		}
 	}
 	for addr, seg := range serviceMap {
-		logrus.Infof("service %s should load topic seg info : %s", addr, seg)
+		log.Infof("service %s should load topic seg info : %s", addr, seg)
 		Global.TopicLoadSvc.TopicReloadRequest(addr, seg)
 	}
 
