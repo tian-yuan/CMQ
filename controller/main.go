@@ -4,38 +4,28 @@ import (
 	"os"
 	"strings"
 
-	_ "github.com/heralight/logrus_mate/hooks/file"
-	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
+	"github.com/micro/go-micro/config/source/env"
+	"github.com/tian-yuan/iot-common/basic/config"
 
 	"fmt"
 	"runtime"
 
+	"github.com/micro/go-micro/util/log"
+
+	z "github.com/tian-yuan/iot-common/plugins/zap"
+
 	"github.com/tian-yuan/CMQ/controller/commands"
+	"github.com/tian-yuan/iot-common/basic"
 	"github.com/tian-yuan/iot-common/util"
 )
 
 func initLogger() {
-
-	// ########## Init Viper
-	var viper = viper.New()
-
-	viper.SetConfigName("controller")           // name of config file (without extension), here we use some logrus_mate sample
-	viper.AddConfigPath("/etc/appname/")  // path to look for the config file in
-	viper.AddConfigPath("$HOME/.appname") // call multiple times to add many search paths
-	viper.AddConfigPath("./conf")         // optionally look for config in the working directory
-	viper.AddConfigPath(".")              // optionally look for config in the working directory
-	err := viper.ReadInConfig()           // Find and read the config file
-	if err != nil {                       // Handle errors reading the config file
-		panic(fmt.Errorf("Fatal error config file: %s \n", err))
-	}
-	// ########### End Init Viper
-
-	// Read configuration
-	var c = util.UnmarshalConfiguration(viper) // Unmarshal configuration from Viper
-	util.SetConfig(logrus.StandardLogger(), c) // for e.g. apply it to logrus default instance
-
-	// ### End Read Configuration
+	source := env.NewSource()
+	basic.Init(
+		config.WithSource(source),
+	)
+	z.Init("iot", "controller", "config", "log")
+	log.SetLogger(z.GetLogger())
 }
 
 func writePid() {
@@ -51,7 +41,7 @@ func writePid() {
 	if err = util.WritePidFile(pidFile); err != nil {
 		panic(fmt.Errorf("write pid file failed, pid file : %s, err : %s\n", pidFile, err))
 	}
-	logrus.Infof("write pid file %s success.", pidFile)
+	log.Infof("write pid file %s success.", pidFile)
 }
 
 func main() {
@@ -64,6 +54,6 @@ func main() {
 	stopCh := util.SetupSignalHandler()
 	<-stopCh
 
-	logrus.Infof("hub stop")
+	log.Infof("hub stop")
 	commands.Stop()
 }

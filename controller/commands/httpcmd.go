@@ -1,9 +1,9 @@
 package commands
 
 import (
-	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 
+	"github.com/micro/go-micro/util/log"
 	"github.com/tian-yuan/CMQ/controller/svc"
 )
 
@@ -11,7 +11,7 @@ var httpCmd = &cobra.Command{
 	Use:   "controller",
 	Short: "start controller server",
 	Run: func(cmd *cobra.Command, args []string) {
-		logrus.Info("Start controller server v0.0.1 -- HEAD")
+		log.Info("Start controller server v0.0.1 -- HEAD")
 
 		dbconf := svc.NewDatabaseConfig()
 		cmd.Flags().StringVarP(&dbconf.Host, "SqlHost", "m", "127.0.0.1", "mysql host address")

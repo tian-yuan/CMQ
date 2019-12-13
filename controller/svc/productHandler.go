@@ -4,10 +4,11 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/google/uuid"
-	"github.com/sirupsen/logrus"
 	"strconv"
 	"time"
+
+	"github.com/google/uuid"
+	"github.com/micro/go-micro/util/log"
 )
 
 type ProductInfo struct {
@@ -24,8 +25,8 @@ type ProductInfo struct {
 }
 
 type ProductResp struct {
-	Code string
-	Message string
+	Code        string
+	Message     string
 	ProductInfo ProductInfo
 }
 
@@ -44,7 +45,7 @@ func handleCreateProduct(w http.ResponseWriter, r *http.Request) {
 		UpdateAt:      time.Now().Format(time.RFC3339),
 		DeleteFlag:    0,
 	}
-	logrus.Infof("create product name : %s, description : %s", productInfo.ProductName, productInfo.Description)
+	log.Infof("create product name : %s, description : %s", productInfo.ProductName, productInfo.Description)
 	w.Header().Set("Content-Type", "application/json")
 	_, err := Ctx.Dbsvc.CreateProduct(*productInfo)
 	if err != nil {
@@ -67,7 +68,7 @@ func handleCreateProduct(w http.ResponseWriter, r *http.Request) {
 
 func handleQueryProduct(w http.ResponseWriter, r *http.Request) {
 	productKey := r.URL.Query().Get("ProductKey")
-	logrus.Infof("query product info, product key : %s", productKey)
+	log.Infof("query product info, product key : %s", productKey)
 	w.Header().Set("Content-Type", "application/json")
 	productInfo, err := Ctx.Dbsvc.QueryProductInfo(productKey)
 	if err != nil {
@@ -93,7 +94,7 @@ func handleQueryProductList(w http.ResponseWriter, r *http.Request) {
 	limit, _ := strconv.Atoi(r.URL.Query().Get("Limit"))
 	offset, _ := strconv.Atoi(r.URL.Query().Get("Offset"))
 	keyword := r.URL.Query().Get("Keyword")
-	logrus.Infof("query product list, limit : %d, offset : %d, keyword : %s", limit, offset, keyword)
+	log.Infof("query product list, limit : %d, offset : %d, keyword : %s", limit, offset, keyword)
 	w.Header().Set("Content-Type", "application/json")
 	productList, err := Ctx.Dbsvc.QueryProductList(int32(offset), int32(limit), keyword)
 	if err != nil {
@@ -106,9 +107,9 @@ func handleQueryProductList(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	} else {
 		type ProductListResp struct {
-			Code string
-			Message string
-			TotalCount int
+			Code            string
+			Message         string
+			TotalCount      int
 			ProductInfoList []ProductInfo
 		}
 		var productListResp ProductListResp

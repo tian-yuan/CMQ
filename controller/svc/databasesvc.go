@@ -6,9 +6,10 @@ import (
 	"net"
 	"strconv"
 
-	"github.com/sirupsen/logrus"
 	"errors"
+
 	"github.com/google/uuid"
+	"github.com/micro/go-micro/util/log"
 )
 
 type DatabaseConf struct {
@@ -47,9 +48,9 @@ func (ds *DatabaseSvc) Start() error {
 	db, err := sql.Open("mysql", dsn)
 	ds.Db = db
 	if err != nil {
-		logrus.Error("open mysql connection failed.")
+		log.Error("open mysql connection failed.")
 	}
-	logrus.Info("open mysql connection success.")
+	log.Info("open mysql connection success.")
 	return err
 }
 
@@ -66,7 +67,7 @@ func (ds *DatabaseSvc) CreateProduct(info ProductInfo) (uint32, error) {
 		"values(?, ?, ?, ?, ?, ?, ?)", productDatabase)
 	stmtIns, err := ds.Db.Prepare(createStr)
 	if err != nil {
-		logrus.Error("database prepare failed.")
+		log.Error("database prepare failed.")
 		return 0, err
 	}
 	defer stmtIns.Close()
@@ -74,12 +75,12 @@ func (ds *DatabaseSvc) CreateProduct(info ProductInfo) (uint32, error) {
 	res, err = stmtIns.Exec(info.ProductKey, info.ProductName, info.ProductSecret, info.Description, info.AccessPoints,
 		info.DeviceCount, info.DeleteFlag)
 	if err != nil {
-		logrus.Error("create product failed.")
+		log.Error("create product failed.")
 		return 0, err
 	}
 	guid, err := res.LastInsertId()
 	if err != nil {
-		logrus.Error("fetch last insert id failed.")
+		log.Error("fetch last insert id failed.")
 		return 0, err
 	}
 	return uint32(guid), nil
@@ -87,29 +88,29 @@ func (ds *DatabaseSvc) CreateProduct(info ProductInfo) (uint32, error) {
 
 func (ds *DatabaseSvc) QueryProductInfo(productKey string) (*ProductInfo, error) {
 	// query product
-	queryStr := fmt.Sprintf("select product_name, description, access_points, device_count, create_at, update_at " +
+	queryStr := fmt.Sprintf("select product_name, description, access_points, device_count, create_at, update_at "+
 		"from %s where product_key='%s'", productDatabase, productKey)
-	logrus.Infof("query string : %s", queryStr)
+	log.Infof("query string : %s", queryStr)
 
-	rows:= ds.Db.QueryRow(queryStr)
+	rows := ds.Db.QueryRow(queryStr)
 	if rows == nil {
-		logrus.Error("query row failed.")
+		log.Error("query row failed.")
 		return nil, errors.New("database internal error.")
 	}
 	var productInfo ProductInfo
 	err := rows.Scan(&productInfo.ProductName, &productInfo.Description, &productInfo.AccessPoints,
 		&productInfo.DeviceCount, &productInfo.CreateAt, &productInfo.UpdateAt)
 	if err != nil {
-		logrus.Error("query record failed.")
+		log.Error("query record failed.")
 		return nil, err
 	}
-	logrus.Infof("query record from database, product key : %s", productKey)
+	log.Infof("query record from database, product key : %s", productKey)
 	return &productInfo, nil
 }
 
 func (ds *DatabaseSvc) QueryProductList(offset int32, limit int32, keyword string) ([]ProductInfo, error) {
 	var productInfoList []ProductInfo
-	queryStr := fmt.Sprintf("select product_key, product_name, description, access_points, device_count, create_at, update_at " +
+	queryStr := fmt.Sprintf("select product_key, product_name, description, access_points, device_count, create_at, update_at "+
 		"from %s order by id limit %d offset %d", productDatabase, limit, offset)
 	rows, err := ds.Db.Query(queryStr)
 	if err != nil {
@@ -129,9 +130,9 @@ func (ds *DatabaseSvc) QueryProductList(offset int32, limit int32, keyword strin
 	return productInfoList, nil
 }
 
-
 ////////////////////////////////////////////////
 const deviceDatabase = "device_info"
+
 func (ds *DatabaseSvc) RegisterDevices(count int32, productKey string) (string, error) {
 	var i int32
 	for i = 0; i < count; i++ {
@@ -141,13 +142,13 @@ func (ds *DatabaseSvc) RegisterDevices(count int32, productKey string) (string, 
 			deviceDatabase)
 		stmtIns, err := ds.Db.Prepare(createStr)
 		if err != nil {
-			logrus.Error("database prepare failed.")
+			log.Error("database prepare failed.")
 			return "", err
 		}
 		defer stmtIns.Close()
 		_, err = stmtIns.Exec(productKey, deviceName, deviceSecret)
 		if err != nil {
-			logrus.Error("create product failed.")
+			log.Error("create product failed.")
 			return "", err
 		}
 		return "", nil
@@ -157,9 +158,9 @@ func (ds *DatabaseSvc) RegisterDevices(count int32, productKey string) (string, 
 
 func (ds *DatabaseSvc) QueryDeviceList(productKey string, offset int32, limit int32, keyword string) ([]DeviceInfo, error) {
 	var deviceInfoList []DeviceInfo
-	queryStr := fmt.Sprintf("select product_key, device_name, device_secret, model, product_version, sdk_version, create_at, update_at, " +
+	queryStr := fmt.Sprintf("select product_key, device_name, device_secret, model, product_version, sdk_version, create_at, update_at, "+
 		"ifnull(last_active_at, ''), ifnull(apply_id, ''), status, delete_flag from %s where product_key='%s' order by id limit %d offset %d",
-			deviceDatabase, productKey, limit, offset)
+		deviceDatabase, productKey, limit, offset)
 	rows, err := ds.Db.Query(queryStr)
 	if err != nil {
 		return nil, err
@@ -169,7 +170,7 @@ func (ds *DatabaseSvc) QueryDeviceList(productKey string, offset int32, limit in
 		var deviceInfo DeviceInfo
 		err := rows.Scan(&deviceInfo.ProductKey, &deviceInfo.DeviceName, &deviceInfo.DeviceSecret, &deviceInfo.Model,
 			&deviceInfo.ProductVersion, &deviceInfo.SdkVersion, &deviceInfo.CreateAt, &deviceInfo.UpdateAt,
-				&deviceInfo.LastActiveAt, &deviceInfo.ApplyId, &deviceInfo.Status, &deviceInfo.DeleteFlag)
+			&deviceInfo.LastActiveAt, &deviceInfo.ApplyId, &deviceInfo.Status, &deviceInfo.DeleteFlag)
 		if err != nil {
 			return nil, err
 		}

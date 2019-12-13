@@ -3,7 +3,7 @@ package svc
 import (
 	"net/http"
 
-	"github.com/sirupsen/logrus"
+	"github.com/micro/go-micro/util/log"
 )
 
 const controllerPath = "/iothub"
@@ -37,7 +37,7 @@ const publishMessage = "PublishMessage"
 const queryMessage = "QueryMessage"
 
 func handleRequest(w http.ResponseWriter, r *http.Request) {
-	logrus.Infof("Hello, %v, http: %v", r.URL.Path, r.TLS == nil)
+	log.Infof("Hello, %v, http: %v", r.URL.Path, r.TLS == nil)
 	if r.Method == http.MethodOptions {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Headers", "*")
@@ -49,7 +49,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Headers", "*")
 	if action == createProduct {
-		logrus.Info("create product.")
+		log.Info("create product.")
 		handleCreateProduct(w, r)
 	} else if action == queryProduct {
 		handleQueryProduct(w, r)
