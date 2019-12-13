@@ -2,16 +2,17 @@ package svc
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"net"
 	"strconv"
-	"errors"
+
+	"github.com/micro/go-micro/util/log"
 )
 
 type TopicConf struct {
-	Host string
-	Port uint16
+	Host     string
+	Port     uint16
 	Password string
 	Username string
 	Database string
@@ -38,7 +39,7 @@ func NewTopicSvc(conf *TopicConf) *TopicSvc {
 }
 
 func (ds *TopicSvc) Start() error {
-	logrus.Infof("start mysql server. host : %s, port : %d, database : %s, username : %s, password : %s",
+	log.Infof("start mysql server. host : %s, port : %d, database : %s, username : %s, password : %s",
 		ds.Conf.Host, ds.Conf.Port, ds.Conf.Database, ds.Conf.Username, ds.Conf.Password)
 
 	addr := net.JoinHostPort(ds.Conf.Host, strconv.Itoa(int(ds.Conf.Port)))
@@ -47,9 +48,9 @@ func (ds *TopicSvc) Start() error {
 	db, err := sql.Open("mysql", dsn)
 	ctx.db = db
 	if err != nil {
-		logrus.Error("open mysql connection failed.")
+		log.Error("open mysql connection failed.")
 	}
-    return err
+	return err
 }
 
 func (ds *TopicSvc) Stop() {
@@ -62,12 +63,12 @@ func (ds *TopicSvc) Subscribe(topic string, guid uint32, qos int) (uint32, error
 	// query device from database
 	queryStr := fmt.Sprintf("select id, product_key, delete_flag from %s where guid = %d and topic_filter = '%s'",
 		subTopicDatabase, guid, topic)
-	logrus.Infof("query string : %s", queryStr)
+	log.Infof("query string : %s", queryStr)
 	var topicId uint32
 	var productKey string
 	var deleteFlag int32
 
-	rows:= ctx.db.QueryRow(queryStr)
+	rows := ctx.db.QueryRow(queryStr)
 	err := rows.Scan(&topicId, &productKey, &deleteFlag)
 	switch {
 	case err == sql.ErrNoRows:
@@ -76,16 +77,16 @@ func (ds *TopicSvc) Subscribe(topic string, guid uint32, qos int) (uint32, error
 			subTopicDatabase, productKey, guid, topic, qos, 0)
 		result, err := ctx.db.Exec(execStr)
 		if err != nil {
-			logrus.Errorf("insert topic subscription failed, sql : %s, error : %s", execStr, err.Error())
+			log.Errorf("insert topic subscription failed, sql : %s, error : %s", execStr, err.Error())
 			return 0, err
 		} else {
 			topicId, err := result.LastInsertId()
-			logrus.Infof("insert topic subscription success, topic id : %d", topicId)
+			log.Infof("insert topic subscription success, topic id : %d", topicId)
 			return uint32(topicId), err
 		}
 	case err != nil:
 		// database internal error
-		logrus.Errorf("query topic subscription record failed, error : %s", err.Error())
+		log.Errorf("query topic subscription record failed, error : %s", err.Error())
 		return 0, errors.New("database insternal error.")
 	default:
 		// we should update the delete_flag to zero
@@ -96,10 +97,10 @@ func (ds *TopicSvc) Subscribe(topic string, guid uint32, qos int) (uint32, error
 				subTopicDatabase, guid, topic,
 			)
 			if err != nil {
-				logrus.Errorf("update topic subscription failed, error : %s", err.Error())
+				log.Errorf("update topic subscription failed, error : %s", err.Error())
 				return 0, err
 			} else {
-				logrus.Infof("update topic subscription success, topic id : %d", topicId)
+				log.Infof("update topic subscription success, topic id : %d", topicId)
 				return topicId, nil
 			}
 		}
