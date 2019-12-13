@@ -3,15 +3,16 @@ package svc
 import (
 	"database/sql"
 	"fmt"
-	"github.com/sirupsen/logrus"
 	"net"
 	"strconv"
+
+	"github.com/micro/go-micro/util/log"
 	"github.com/pkg/errors"
 )
 
 type DeviceConf struct {
-	Host string
-	Port uint16
+	Host     string
+	Port     uint16
 	Password string
 	Username string
 	Database string
@@ -38,7 +39,7 @@ func NewDeviceSvc(conf *DeviceConf) *DeviceSvc {
 }
 
 func (ds *DeviceSvc) Start() error {
-	logrus.Infof("start mysql server. host : %s, port : %d, database : %s, username : %s, password : %s",
+	log.Infof("start mysql server. host : %s, port : %d, database : %s, username : %s, password : %s",
 		ds.Conf.Host, ds.Conf.Port, ds.Conf.Database, ds.Conf.Username, ds.Conf.Password)
 
 	addr := net.JoinHostPort(ds.Conf.Host, strconv.Itoa(int(ds.Conf.Port)))
@@ -47,9 +48,9 @@ func (ds *DeviceSvc) Start() error {
 	db, err := sql.Open("mysql", dsn)
 	ctx.db = db
 	if err != nil {
-		logrus.Error("open mysql connection failed.")
+		log.Error("open mysql connection failed.")
 	}
-    return err
+	return err
 }
 
 func (ds *DeviceSvc) Stop() {
@@ -61,21 +62,21 @@ const deviceDatabase = "device_info"
 func (ds *DeviceSvc) Register(productKey string, deviceName string, sign string) (uint32, error) {
 	// query device from database
 	queryStr := fmt.Sprintf("select id, product_key, device_secret from %s where device_name = '%s'", deviceDatabase, deviceName)
-	logrus.Infof("query string : %s", queryStr)
+	log.Infof("query string : %s", queryStr)
 	var guid uint32
 	var key string
 	var deviceSecret string
 
-	rows:= ctx.db.QueryRow(queryStr)
+	rows := ctx.db.QueryRow(queryStr)
 	if rows == nil {
-		logrus.Error("query row failed.")
+		log.Error("query row failed.")
 		return 0, errors.New("database internal error.")
 	}
 	err := rows.Scan(&guid, &key, &deviceSecret)
 	if err != nil {
-		logrus.Error("query record failed.")
+		log.Error("query record failed.")
 		return 0, err
 	}
-	logrus.Infof("query record from database, guid : %d, product key : %s", guid, key)
+	log.Infof("query record from database, guid : %d, product key : %s", guid, key)
 	return guid, nil
 }

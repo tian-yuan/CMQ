@@ -1,9 +1,10 @@
 package svc
 
 import (
-	"github.com/sirupsen/logrus"
-    "database/sql"
-    _ "github.com/go-sql-driver/mysql"
+	"database/sql"
+
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/micro/go-micro/util/log"
 )
 
 var ctx Context
@@ -16,6 +17,6 @@ type Context struct {
 }
 
 func (ctx *Context) register() error {
-	logrus.Info("register.")
+	log.Info("register.")
 	return nil
 }
