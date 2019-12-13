@@ -3,9 +3,10 @@ package svc
 import (
 	"net/http"
 
-	"github.com/sirupsen/logrus"
-	"strconv"
 	"fmt"
+	"strconv"
+
+	"github.com/micro/go-micro/util/log"
 )
 
 // iot message dispatcher publish
@@ -15,13 +16,13 @@ const healthz = "/v1/imd/healthz"
 const rpcPath = "/v1/imd/rpc"
 
 func handleRequest(w http.ResponseWriter, r *http.Request) {
-	logrus.Infof("Hello, %s, http: %d", r.URL.Path, r.TLS == nil)
+	log.Infof("Hello, %s, http: %d", r.URL.Path, r.TLS == nil)
 	u := r.URL.EscapedPath()
 	if u == publishPath {
-		logrus.Info("publish.")
+		log.Info("publish.")
 		handlePublish(w, r)
 	} else {
-		logrus.Errorf("unknown path : %s", u)
+		log.Errorf("unknown path : %s", u)
 	}
 }
 
@@ -55,20 +56,20 @@ func handlePublish(w http.ResponseWriter, r *http.Request) {
 
 		if msg == "" ||
 			topic == "" || qosStr == "" {
-			logrus.Warningf("Bad publish message request, %v", r)
+			log.Infof("Bad publish message request, %v", r)
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
 		qos, e := strconv.Atoi(qosStr)
 		if e != nil {
-			logrus.Warningf("Bad publish message request, qos is not number")
+			log.Infof("Bad publish message request, qos is not number")
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
 
 		if qos != 0 && qos != 1 {
-			logrus.Warningf("Bad publish message request, qos should be 0 or 1")
+			log.Infof("Bad publish message request, qos should be 0 or 1")
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -82,6 +83,6 @@ func handlePublish(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	logrus.Warningf("Bad publish message request, %v, error: %s", r, errMsg)
+	log.Infof("Bad publish message request, %v, error: %s", r, errMsg)
 	w.WriteHeader(http.StatusBadRequest)
 }

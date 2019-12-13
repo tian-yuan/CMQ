@@ -4,8 +4,9 @@ import (
 	"net"
 	"sync"
 	"time"
+
+	"github.com/micro/go-micro/util/log"
 	"github.com/tian-yuan/CMQ/hub/proto/mqtt"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -63,7 +64,7 @@ type ClientCtx struct {
 	Conn       net.Conn
 	productKey string
 	deviceName string
-	guid 		uint32
+	guid       uint32
 	status     int
 	currentId  uint16
 	ws         bool
@@ -164,7 +165,7 @@ func (ctx *ClientCtx) resetPendingPacket() {
 
 	for i, f := range ctx.pendingPackets {
 		f <- rcNetworkError
-		logrus.Infof("Reset packetId: %d", i)
+		log.Infof("Reset packetId: %d", i)
 	}
 	ctx.pendingPackets = nil
 }
@@ -210,7 +211,7 @@ var (
 func (ctx *ClientCtx) PublishMessage(deviceName string, productKey string,
 	msg string, topic string, qos int8) int {
 
-	logrus.Infof("Handle publish message, deviceName %s, productKey: %s", deviceName, productKey)
+	log.Infof("Handle publish message, deviceName %s, productKey: %s", deviceName, productKey)
 
 	h := mqtt.NewPublishPacketTypeHeader(qos, defaultDup, defaultRetain)
 	pktId := ctx.GetPacketId()
@@ -234,13 +235,13 @@ func (ctx *ClientCtx) PublishMessage(deviceName string, productKey string,
 		ret = ctx.publish(p, deviceName, productKey)
 
 		if ret != rcRequestOK {
-			logrus.Errorf("publish to client error, %s, %s", deviceName, productKey)
+			log.Errorf("publish to client error, %s, %s", deviceName, productKey)
 			if qos == 1 {
 				ctx.AckPacket(pktId, ret)
 			}
 		}
 	} else {
-		logrus.Errorf("Client is not online: %s, %s", deviceName, productKey)
+		log.Errorf("Client is not online: %s, %s", deviceName, productKey)
 		ret = rcClientNotOnline
 	}
 
@@ -264,18 +265,17 @@ func (ctx *ClientCtx) PublishMessage(deviceName string, productKey string,
 }
 
 func (ctx *ClientCtx) publish(p *mqtt.PublishPacket, deviceName string, productKey string) int {
-	logrus.Infof("publish message to client : %s, payload : %s", p.Topic, string(p.Payload))
+	log.Infof("publish message to client : %s, payload : %s", p.Topic, string(p.Payload))
 	if e := p.Encode(&ctx.encoder); e != nil {
 		ctx.encoder.ResetState()
-		logrus.Errorf("Encode payload error: %v, %s, %s", e, deviceName, productKey)
+		log.Errorf("Encode payload error: %v, %s, %s", e, deviceName, productKey)
 		return rcEncodeError
 	}
 
-	if e := ctx.encoder.WriteTo(ctx.Conn, 2 * time.Minute); e != nil {
-		logrus.Errorf("Push message error: %v, %s, %s", e, deviceName, productKey)
+	if e := ctx.encoder.WriteTo(ctx.Conn, 2*time.Minute); e != nil {
+		log.Errorf("Push message error: %v, %s, %s", e, deviceName, productKey)
 		return rcNetworkError
 	}
 
 	return rcRequestOK
 }
-

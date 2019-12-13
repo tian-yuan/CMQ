@@ -1,11 +1,12 @@
 package svc
 
 import (
-	"github.com/sirupsen/logrus"
 	"net"
 	"strconv"
-	"github.com/tian-yuan/iot-common/util"
 	"sync"
+
+	"github.com/micro/go-micro/util/log"
+	"github.com/tian-yuan/iot-common/util"
 )
 
 type MqttSvc struct {
@@ -14,7 +15,6 @@ type MqttSvc struct {
 	w *sync.WaitGroup
 
 	tcp net.Listener
-
 
 	StopCh chan struct{}
 }
@@ -25,7 +25,7 @@ type MqttConf struct {
 }
 
 func init() {
-	ClientCtxs = make([]ClientCtx, 50 * 10000)
+	ClientCtxs = make([]ClientCtx, 50*10000)
 	for i := 0; i < len(ClientCtxs); i += 1 {
 		ClientCtxs[i].Fd = i
 	}
@@ -39,29 +39,26 @@ func NewMqttConf() *MqttConf {
 }
 
 func NewMqttSvc(conf *MqttConf) *MqttSvc {
-	return &MqttSvc {
-		Conf: conf,
-		StopCh:  make(chan struct{}),
+	return &MqttSvc{
+		Conf:   conf,
+		StopCh: make(chan struct{}),
 	}
 }
 
 func (ms *MqttSvc) Start() {
-	logrus.WithFields(logrus.Fields{
-		"mqttHost": ms.Conf.MqttHost,
-		"mqttPort": ms.Conf.MqttPort,
-	}).Info("start mqtt server.")
+	log.Info("start mqtt server.")
 
 	tcpaddr := net.JoinHostPort(ms.Conf.MqttHost, strconv.Itoa(int(ms.Conf.MqttPort)))
-	logrus.Infof("Tcp addr: %s", tcpaddr)
+	log.Infof("Tcp addr: %s", tcpaddr)
 	tcpl, e := util.NewTCPListener(tcpaddr, false)
 	if e != nil {
-		logrus.Fatalf("New tcp listener error: %v", e)
+		log.Fatalf("New tcp listener error: %v", e)
 		return
 	}
 
 	ms.tcp = tcpl
 	go startListen(ms, tcpl)
-	logrus.Info("Start to listen tcp...")
+	log.Info("Start to listen tcp...")
 	return
 }
 
@@ -83,7 +80,7 @@ func startListen(s *MqttSvc, l net.Listener) {
 			default:
 			}
 
-			logrus.Errorf("Accept error, listener: %+v, error: %v", l, err)
+			log.Errorf("Accept error, listener: %+v, error: %v", l, err)
 		}
 	}
 }

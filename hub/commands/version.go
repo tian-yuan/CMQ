@@ -1,8 +1,8 @@
 package commands
 
 import (
+	"github.com/micro/go-micro/util/log"
 	"github.com/spf13/cobra"
-	"github.com/sirupsen/logrus"
 )
 
 func init() {
@@ -14,6 +14,6 @@ var versionCmd = &cobra.Command{
 	Short: "Print the version number of Hugo",
 	Long:  `All software has versions. This is Hugo's`,
 	Run: func(cmd *cobra.Command, args []string) {
-		logrus.Info("Hub gateway v0.0.1 -- HEAD")
+		log.Info("Hub gateway v0.0.1 -- HEAD")
 	},
 }

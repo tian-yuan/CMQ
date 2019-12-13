@@ -1,11 +1,12 @@
 package svc
 
 import (
-	"sync"
 	"net"
-	"github.com/sirupsen/logrus"
-	"github.com/tian-yuan/CMQ/hub/proto/coap"
 	"strconv"
+	"sync"
+
+	"github.com/micro/go-micro/util/log"
+	"github.com/tian-yuan/CMQ/hub/proto/coap"
 )
 
 type CoapSvc struct {
@@ -19,36 +20,32 @@ type CoapSvc struct {
 }
 
 type CoapConf struct {
-	Type string
+	Type     string
 	CoapHost string
 	CoapPort uint16
 }
 
 func NewCoapConf() *CoapConf {
 	return &CoapConf{
-		Type: "udp",
+		Type:     "udp",
 		CoapHost: "0.0.0.0",
 		CoapPort: 1883,
 	}
 }
 
 func NewCoapSvc(conf *CoapConf) *CoapSvc {
-	return &CoapSvc {
-		Conf: conf,
-		StopCh:  make(chan struct{}),
+	return &CoapSvc{
+		Conf:   conf,
+		StopCh: make(chan struct{}),
 	}
 }
 
 func (cs *CoapSvc) Start() {
-	logrus.WithFields(logrus.Fields{
-		"type": cs.Conf.Type,
-		"coapHost": cs.Conf.CoapHost,
-		"coapPort": cs.Conf.CoapPort,
-	}).Info("start coap server.")
+	log.Info("start coap server.")
 
 	mux := coap.NewServeMux()
 
 	coapaddr := net.JoinHostPort(cs.Conf.CoapHost, strconv.Itoa(int(cs.Conf.CoapPort)))
-	logrus.Infof("coap addr: %s", coapaddr)
+	log.Infof("coap addr: %s", coapaddr)
 	go coap.ListenAndServe(cs.Conf.Type, coapaddr, mux)
 }

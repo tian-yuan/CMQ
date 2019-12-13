@@ -1,19 +1,19 @@
 package svc
 
 import (
-	"github.com/tian-yuan/iot-common/util"
-	"net"
-	"github.com/sirupsen/logrus"
-	"math/rand"
-	"time"
-	"github.com/tian-yuan/CMQ/hub/proto/mqtt"
 	"errors"
-	proto "github.com/tian-yuan/iot-common/iotpb"
-	"golang.org/x/net/context"
 	"fmt"
+	"math/rand"
+	"net"
 	"strings"
-)
+	"time"
 
+	"github.com/micro/go-micro/util/log"
+	"github.com/tian-yuan/CMQ/hub/proto/mqtt"
+	proto "github.com/tian-yuan/iot-common/iotpb"
+	"github.com/tian-yuan/iot-common/util"
+	"golang.org/x/net/context"
+)
 
 func init() {
 	rand.Seed(time.Now().Unix())
@@ -22,21 +22,21 @@ func init() {
 func handleConnection(s *MqttSvc, c net.Conn, ws bool) {
 	fd := util.GetConnFd(c)
 
-	logrus.Infof("receive connection fd : %d", fd)
+	log.Infof("receive connection fd : %d", fd)
 	ctx := GetCtxForFd(fd)
 	if ctx == nil {
 		c.Close()
 		return
 	}
 
-	logrus.Infof("Client connect, address: %s, isWs: %t, fd: %d", c.RemoteAddr(), ws, fd)
+	log.Infof("Client connect, address: %s, isWs: %t, fd: %d", c.RemoteAddr(), ws, fd)
 
 	ctx.Reset(ws, c)
 
 	ctx.handleClient()
 	ctx.Mux.Lock()
 
-	logrus.Infof("Client disconnect, address: %s, isWs: %t, fd: %d, reason: %s, err: %s",
+	log.Infof("Client disconnect, address: %s, isWs: %t, fd: %d, reason: %s, err: %s",
 		c.RemoteAddr(), ws, fd, reasons[ctx.exitCode], ctx.err)
 
 	ctx.destroySession()
@@ -84,7 +84,7 @@ func (ctx *ClientCtx) handleClient() {
 		if err = de.Read(ctx.Conn); err != nil {
 			ctx.exitCode = ecReadError
 			ctx.err = err
-			logrus.Infof("Read error: %s", err)
+			log.Infof("Read error: %s", err)
 			return
 		}
 
@@ -96,14 +96,14 @@ func (ctx *ClientCtx) handleClient() {
 		}
 
 		now := time.Now().Unix()
-		if ctx.keepalive != 0 && now - ctx.lastReceived >= int64(ctx.keepalive*2) {
-			logrus.Info("current session is timeout.")
+		if ctx.keepalive != 0 && now-ctx.lastReceived >= int64(ctx.keepalive*2) {
+			log.Info("current session is timeout.")
 			ctx.exitCode = ecSessionTimeout
 			ctx.err = errors.New("Session timeout")
 			return
 		}
 
-		logrus.Infof("current session, now : %lld, next refresh : %lld", now, ctx.nextRefresh)
+		log.Infof("current session, now : %lld, next refresh : %lld", now, ctx.nextRefresh)
 		if now >= ctx.nextRefresh {
 			ctx.refreshSession()
 		}
@@ -111,7 +111,7 @@ func (ctx *ClientCtx) handleClient() {
 		for {
 			ret, err := de.DecodeMQTT()
 			if err != nil {
-				logrus.Errorf("Invalid mqtt protocol: %s", err)
+				log.Errorf("Invalid mqtt protocol: %s", err)
 				ctx.exitCode = ecInvalidProtocol
 				ctx.err = err
 				return
@@ -132,7 +132,7 @@ func (ctx *ClientCtx) handleClient() {
 }
 
 func (ctx *ClientCtx) handlePacket(p interface{}) error {
-	logrus.Infof("Receive pkt: %s", p)
+	log.Infof("Receive pkt: %s", p)
 	switch pkt := p.(type) {
 	case *mqtt.ConnectPacket:
 		return ctx.handleConnectPacket(pkt)
@@ -150,7 +150,7 @@ func (ctx *ClientCtx) handlePacket(p interface{}) error {
 		return ctx.handleDisconnectPacket(pkt)
 	default:
 		// Pubrec, Pubrel, Pubcomp, Suback, Unsuback, Pingresp
-		logrus.Infof("do not support packet.")
+		log.Infof("do not support packet.")
 		ctx.exitCode = ecInvalidProtocol
 		return errors.New("Protocol volatilation")
 	}
@@ -161,7 +161,7 @@ var sessionPresent = true
 
 func (ctx *ClientCtx) handleConnectPacket(p *mqtt.ConnectPacket) error {
 	if ctx.hasConnected {
-		logrus.Errorf("Receive 2nd connect packet")
+		log.Errorf("Receive 2nd connect packet")
 		ctx.exitCode = ecInvalidProtocol
 		return errors.New("Client has connected")
 	}
@@ -169,7 +169,7 @@ func (ctx *ClientCtx) handleConnectPacket(p *mqtt.ConnectPacket) error {
 	productKey, err := getProductKey(p.Username)
 
 	if err != nil {
-		logrus.Errorf("Username is invalid: %s", p.Username)
+		log.Errorf("Username is invalid: %s", p.Username)
 		ctx.exitCode = ecBadClientRequest
 		return err
 	}
@@ -182,18 +182,18 @@ func (ctx *ClientCtx) handleConnectPacket(p *mqtt.ConnectPacket) error {
 	// send connect packet to registry manager for verifying connect package
 	registerCli := proto.NewRegistryManagerService(util.REGISTER_MANAGER_SVC, util.Ctx.RegisterSvc.Client())
 	conMsg := proto.ConnectMessageRequest{
-		ClientId: p.ClientId,
-		Username: p.Username,
-		Password: string(p.Password),
-		WillMsg: string(p.WillMessage),
+		ClientId:  p.ClientId,
+		Username:  p.Username,
+		Password:  string(p.Password),
+		WillMsg:   string(p.WillMessage),
 		WillTopic: p.WillTopic,
 	}
 	rsp, err := registerCli.Registry(context.TODO(), &conMsg)
 	if err != nil {
 		code = -1
-		logrus.Errorf("register failed, error message : %s", err.Error())
+		log.Errorf("register failed, error message : %s", err.Error())
 	} else {
-		logrus.Infof("register success, guid : %d,  message : %s", rsp.Guid, rsp.Message)
+		log.Infof("register success, guid : %d,  message : %s", rsp.Guid, rsp.Message)
 	}
 
 	connack := mqtt.NewConnackPacket(sessionPresent, byte(code))
@@ -203,16 +203,16 @@ func (ctx *ClientCtx) handleConnectPacket(p *mqtt.ConnectPacket) error {
 	connack.Encode(&ctx.encoder)
 
 	// Now there is only one goroutine to access ctx, no mutex required.
-	e := ctx.encoder.WriteTo(ctx.Conn, 5 * time.Second)
+	e := ctx.encoder.WriteTo(ctx.Conn, 5*time.Second)
 
 	if e != nil {
-		logrus.Infof("Write error: %s", e)
+		log.Infof("Write error: %s", e)
 		ctx.exitCode = ecWriteError
 		return e
 	}
 
 	if code != mqtt.RC_ACCEPTED {
-		logrus.Errorf("Mqtt connect error: %d", code)
+		log.Errorf("Mqtt connect error: %d", code)
 		ctx.exitCode = ecBadClientRequest
 		return errors.New("Connect error")
 	}
@@ -229,7 +229,7 @@ func (ctx *ClientCtx) handleConnectPacket(p *mqtt.ConnectPacket) error {
 
 	ctx.refreshSession()
 	UpdateDeviceInfo(rsp.Guid, DeviceInfo{
-		DeviceId: deviceName,
+		DeviceId:   deviceName,
 		ProductKey: productKey,
 	})
 	UpdateGuidToDeviceIdMap(rsp.Guid, deviceName)
@@ -264,10 +264,10 @@ func refreshDelay() int64 {
 const randRange = 4 * 60 // 4 minutes
 
 func (ctx *ClientCtx) refreshSession() {
-	logrus.Info("begin to refresh session.")
+	log.Info("begin to refresh session.")
 	ctx.Mux.RLock()
 	if ctx.status != activeState {
-		logrus.Info("current client is not active.")
+		log.Info("current client is not active.")
 		ctx.Mux.RUnlock()
 		return
 	}
@@ -284,11 +284,11 @@ func (ctx *ClientCtx) refreshSession() {
 	for productKey, deviceName := range sessions {
 		k := generateKey(ctx.guid)
 		oldSessionValue, err := sessionStorage.Refresh(k, sessVal, Global.RedisSessionTimeOut)
-		logrus.Infof("Refresh session: %s, %s, %s, %s", productKey, deviceName, k, sessVal)
+		log.Infof("Refresh session: %s, %s, %s, %s", productKey, deviceName, k, sessVal)
 		if err != nil {
-			logrus.Errorf("Session refresh error: %v, %s, %s", err, k, sessVal)
+			log.Errorf("Session refresh error: %v, %s, %s", err, k, sessVal)
 		} else if oldSessionValue != "" {
-			logrus.Errorf("Session duplication, kick former, %s, %s, former: %s", k, sessVal, oldSessionValue)
+			log.Errorf("Session duplication, kick former, %s, %s, former: %s", k, sessVal, oldSessionValue)
 			//kickDupConnection(sessVal, productKey, deviceName, oldSessionValue)
 		}
 	}
@@ -297,20 +297,20 @@ func (ctx *ClientCtx) refreshSession() {
 
 func (ctx *ClientCtx) publishForward(p *mqtt.PublishPacket) error {
 	if p.Header.Qos() == 2 {
-		logrus.Errorf("Qos 2 is not supported")
+		log.Errorf("Qos 2 is not supported")
 		return errors.New("Qos 2 is not supported")
 	} else if p.Header.Qos() == 1 {
 		pubEnginCli := proto.NewPublishEngineService(util.PUBLISH_ENGINE_SVC, util.Ctx.PubEngineSvc.Client())
 		pubMsg := proto.PublishMessageRequest{
-			Header: &proto.MessageHeader {
+			Header: &proto.MessageHeader{
 				Qos: int32(p.Header.Qos()),
 			},
-			Topic: p.Topic,
+			Topic:   p.Topic,
 			Payload: p.Payload,
 		}
 		_, err := pubEnginCli.PublishMessage(context.TODO(), &pubMsg)
 		if err != nil {
-			logrus.Errorf("publish to publish engine failed, error message : %v.", err)
+			log.Errorf("publish to publish engine failed, error message : %v.", err)
 		}
 
 		puback := mqtt.NewPubackPacket(p.PacketId)
@@ -320,12 +320,12 @@ func (ctx *ClientCtx) publishForward(p *mqtt.PublishPacket) error {
 		// puback is fixed size
 		// encode error check is not necessary
 		puback.Encode(&ctx.encoder)
-		e := ctx.encoder.WriteTo(ctx.Conn, 5 * time.Second)
+		e := ctx.encoder.WriteTo(ctx.Conn, 5*time.Second)
 
 		ctx.Mux.Unlock()
 
 		if e != nil {
-			logrus.Infof("Write error: %s", e)
+			log.Infof("Write error: %s", e)
 			ctx.exitCode = ecWriteError
 			return e
 		}
@@ -336,7 +336,7 @@ func (ctx *ClientCtx) publishForward(p *mqtt.PublishPacket) error {
 
 func (ctx *ClientCtx) handlePublishPacket(p *mqtt.PublishPacket) error {
 	if !ctx.hasConnected {
-		logrus.Error("Publish before connect")
+		log.Error("Publish before connect")
 		ctx.exitCode = ecInvalidProtocol
 		return errors.New("Client has not been connected before publish")
 	}
@@ -346,11 +346,11 @@ func (ctx *ClientCtx) handlePublishPacket(p *mqtt.PublishPacket) error {
 
 func (ctx *ClientCtx) handlePubackPacket(p *mqtt.PubackPacket) error {
 	if !ctx.hasConnected {
-		logrus.Error("Receive puback before connect")
+		log.Error("Receive puback before connect")
 		ctx.exitCode = ecInvalidProtocol
 		return errors.New("Client has not been connected before")
 	}
-	logrus.Infof("Push ack packet ok, packetId: %d", p.PacketId)
+	log.Infof("Push ack packet ok, packetId: %d", p.PacketId)
 	ctx.AckPacket(p.PacketId, rcRequestOK)
 
 	return nil
@@ -358,7 +358,7 @@ func (ctx *ClientCtx) handlePubackPacket(p *mqtt.PubackPacket) error {
 
 func (ctx *ClientCtx) handleSubscribePacket(p *mqtt.SubscribePacket) error {
 	if !ctx.hasConnected {
-		logrus.Error("Receive subscribe before connect")
+		log.Error("Receive subscribe before connect")
 		ctx.exitCode = ecInvalidProtocol
 		return errors.New("Client has not been connected before")
 	}
@@ -368,14 +368,14 @@ func (ctx *ClientCtx) handleSubscribePacket(p *mqtt.SubscribePacket) error {
 	messageDispatcherCli := proto.NewMessageDispatcherService(util.MESSAGE_DISPATCHER_SVC,
 		util.Ctx.MessageDispatcherSvc.Client())
 	for i, _ := range p.Topics {
-		subMsg := proto.SubscribeMessageRequest {
+		subMsg := proto.SubscribeMessageRequest{
 			TopicFilter: p.Topics[i],
-			Qos: int32(p.Qoss[i]),
-			Guid: ctx.guid,
+			Qos:         int32(p.Qoss[i]),
+			Guid:        ctx.guid,
 		}
 		_, err := messageDispatcherCli.Subscribe(context.TODO(), &subMsg)
 		if err != nil {
-			logrus.Error("send subscribe message to message dispatcher failed, error message.")
+			log.Error("send subscribe message to message dispatcher failed, error message.")
 			codes[i] = -2
 		} else {
 			codes[i] = 1
@@ -389,13 +389,13 @@ func (ctx *ClientCtx) handleSubscribePacket(p *mqtt.SubscribePacket) error {
 	// we limit max topic num per sub is 16
 	// so suback payload is small, encode will always succeed
 	ack.Encode(&ctx.encoder)
-	e := ctx.encoder.WriteTo(ctx.Conn, 5 * time.Second)
+	e := ctx.encoder.WriteTo(ctx.Conn, 5*time.Second)
 
 	ctx.Mux.Unlock()
 
-	logrus.Info("subscribe success.")
+	log.Info("subscribe success.")
 	if e != nil {
-		logrus.Infof("Write error: %s", e)
+		log.Infof("Write error: %s", e)
 		ctx.exitCode = ecWriteError
 		return e
 	}
@@ -404,7 +404,7 @@ func (ctx *ClientCtx) handleSubscribePacket(p *mqtt.SubscribePacket) error {
 
 func (ctx *ClientCtx) handleUnsubPacket(p *mqtt.UnsubscribePacket) error {
 	if !ctx.hasConnected {
-		logrus.Error("Receive unsub before connect")
+		log.Error("Receive unsub before connect")
 		ctx.exitCode = ecInvalidProtocol
 		return errors.New("Client has not been connected before")
 	}
@@ -412,12 +412,12 @@ func (ctx *ClientCtx) handleUnsubPacket(p *mqtt.UnsubscribePacket) error {
 	messageDispatcherCli := proto.NewMessageDispatcherService(util.MESSAGE_DISPATCHER_SVC,
 		util.Ctx.MessageDispatcherSvc.Client())
 	for i, _ := range p.Topics {
-		unSubMsg := proto.UnSubscribeMessageRequest {
+		unSubMsg := proto.UnSubscribeMessageRequest{
 			TopicFilter: p.Topics[i],
 		}
 		rsp, err := messageDispatcherCli.UnSubscribe(context.TODO(), &unSubMsg)
 		if err != nil {
-			logrus.Errorf("send unsubscribe message to message dispather failed, error message : %s", rsp.Message)
+			log.Errorf("send unsubscribe message to message dispather failed, error message : %s", rsp.Message)
 		}
 	}
 
@@ -428,11 +428,11 @@ func (ctx *ClientCtx) handleUnsubPacket(p *mqtt.UnsubscribePacket) error {
 	// unsuback is fixed size and small,
 	// encode will always succeed
 	ack.Encode(&ctx.encoder)
-	e = ctx.encoder.WriteTo(ctx.Conn, 5 * time.Second)
+	e = ctx.encoder.WriteTo(ctx.Conn, 5*time.Second)
 	ctx.Mux.Unlock()
 
 	if e != nil {
-		logrus.Infof("Write error: %s", e)
+		log.Infof("Write error: %s", e)
 		ctx.exitCode = ecWriteError
 		return e
 	}
@@ -446,12 +446,12 @@ func (ctx *ClientCtx) handlePingreqPacket(p *mqtt.PingreqPacket) error {
 	ctx.Mux.Lock()
 
 	pingresp.Encode(&ctx.encoder)
-	e := ctx.encoder.WriteTo(ctx.Conn, 5 * time.Second)
+	e := ctx.encoder.WriteTo(ctx.Conn, 5*time.Second)
 
 	ctx.Mux.Unlock()
 
 	if e != nil {
-		logrus.Infof("Write error: %s", e)
+		log.Infof("Write error: %s", e)
 		ctx.exitCode = ecWriteError
 		return e
 	}
