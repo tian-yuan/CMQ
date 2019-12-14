@@ -2,11 +2,12 @@ package svc
 
 import (
 	"bytes"
-	"github.com/RoaringBitmap/roaring"
 	"net/http"
 	"strconv"
 
-	"github.com/sirupsen/logrus"
+	"github.com/RoaringBitmap/roaring"
+
+	"github.com/micro/go-micro/util/log"
 )
 
 const subscribePath = "/v1/topic/subscribe"
@@ -16,17 +17,17 @@ const publishPath = "/v1/topic/publish"
 const topicLoad = "/v1/topic/load"
 
 func handleRequest(w http.ResponseWriter, r *http.Request) {
-	logrus.Infof("Hello, %s, http: %d", r.URL.Path, r.TLS == nil)
+	log.Infof("Hello, %s, http: %d", r.URL.Path, r.TLS == nil)
 	u := r.URL.EscapedPath()
 	if u == subscribePath {
-		logrus.Info("subscribe.")
+		log.Info("subscribe.")
 		handleSubscribe(w, r)
 	} else if u == publishPath {
 		handlePublish(w, r)
 	} else if u == topicLoad {
 		handleTopicLoad(w, r)
 	} else {
-		logrus.Errorf("unkown path : %s", u)
+		log.Errorf("unkown path : %s", u)
 	}
 }
 
@@ -34,7 +35,7 @@ func handleSubscribe(w http.ResponseWriter, r *http.Request) {
 	topic := r.Form.Get("Topic")
 	qos, _ := strconv.Atoi(r.Form.Get("Qos"))
 	guid, _ := strconv.ParseUint(r.Form.Get("Guid"), 10, 64)
-	logrus.Infof("handle subscribe topic : %s, qos : %d, guid : %d", topic, qos, guid)
+	log.Infof("handle subscribe topic : %s, qos : %d, guid : %d", topic, qos, guid)
 	err := Ctx.Subscribe(topic, qos, uint32(guid))
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -46,7 +47,7 @@ func handleSubscribe(w http.ResponseWriter, r *http.Request) {
 func handlePublish(w http.ResponseWriter, r *http.Request) {
 	topic := r.Form.Get("Topic")
 	qos := r.Form.Get("Qos")
-	logrus.Infof("handle publish topic : %s, qos : %d", topic, qos)
+	log.Infof("handle publish topic : %s, qos : %d", topic, qos)
 	subs := Ctx.Match(topic)
 	rb := roaring.BitmapOf()
 	for _, sub := range subs {
