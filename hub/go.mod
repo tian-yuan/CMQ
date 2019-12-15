@@ -12,10 +12,11 @@ require (
 	github.com/micro/go-micro v1.11.0
 	github.com/micro/go-plugins v1.3.0 // indirect
 	github.com/natefinch/lumberjack v2.0.0+incompatible // indirect
+	github.com/opentracing/opentracing-go v1.1.0
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.4.0
-	github.com/tian-yuan/iot-common v0.0.4
+	github.com/tian-yuan/iot-common v0.0.6
 	golang.org/x/net v0.0.0-20190724013045-ca1201d0de80
 	k8s.io/apimachinery v0.0.0-20190727130956-f97a4e5b4abc
 )

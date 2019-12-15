@@ -13,6 +13,8 @@ import (
 	proto "github.com/tian-yuan/iot-common/iotpb"
 	"github.com/tian-yuan/iot-common/util"
 	"golang.org/x/net/context"
+	"github.com/micro/go-micro/metadata"
+	opentracing "github.com/opentracing/opentracing-go"
 )
 
 func init() {
@@ -188,7 +190,19 @@ func (ctx *ClientCtx) handleConnectPacket(p *mqtt.ConnectPacket) error {
 		WillMsg:   string(p.WillMessage),
 		WillTopic: p.WillTopic,
 	}
-	rsp, err := registerCli.Registry(context.TODO(), &conMsg)
+
+	span, tctx := opentracing.StartSpanFromContext(context.Background(), "call")
+	md, ok := metadata.FromContext(tctx)
+	if !ok {
+		md = make(map[string]string)
+	}
+	defer span.Finish()
+	// inject opentracing textmap into empty context, for tracking
+	opentracing.GlobalTracer().Inject(span.Context(), opentracing.TextMap, opentracing.TextMapCarrier(md))
+	tctx = opentracing.ContextWithSpan(tctx, span)
+	tctx = metadata.NewContext(tctx, md)
+
+	rsp, err := registerCli.Registry(tctx, &conMsg)
 	if err != nil {
 		code = -1
 		log.Errorf("register failed, error message : %s", err.Error())

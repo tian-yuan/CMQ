@@ -19,6 +19,8 @@ var rpccmd = &cobra.Command{
 		cmd.Flags().StringVarP(&zkAddr, "zkAddress", "z", "127.0.0.1:2181", "zk address array")
 		log.Infof("start register service, zk address : %s", zkAddr)
 		zkAddrArr := strings.Split(zkAddr, ";")
+		var tracerAddr string
+		cmd.Flags().StringVarP(&tracerAddr, "tracerAddress", "j", "127.0.0.1:6831", "tracer address array")
 
 		log.Info("begin to start redis client.")
 		var redisClusterAddr string
@@ -55,6 +57,6 @@ var rpccmd = &cobra.Command{
 		svc.Global.DeviceSvc.Start()
 
 		rpcSvc := svc.NewRpcSvc()
-		rpcSvc.Start(zkAddrArr)
+		rpcSvc.Start(zkAddrArr, tracerAddr)
 	},
 }

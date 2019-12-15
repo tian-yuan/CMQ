@@ -4,7 +4,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/micro/go-micro/util/log"
@@ -21,11 +20,17 @@ var mqttCmd = &cobra.Command{
 
 		var zkAddr string
 		cmd.Flags().StringVarP(&zkAddr, "zkAddress", "z", "127.0.0.1:2181", "zk address array")
+		var tracerAddr string
+		cmd.Flags().StringVarP(&tracerAddr, "tracerAddress", "j", "127.0.0.1:6831", "tracer address array")
 		log.Infof("start discovery client, zk address : %s", zkAddr)
-		zkAddrArr := strings.Split(zkAddr, ";")
-		util.Ctx.InitRegisterSvc(zkAddrArr)
-		util.Ctx.InitPubEngineSvc(zkAddrArr)
-		util.Ctx.InitMessageDispatcherSvc(zkAddrArr)
+		util.Init(
+			util.WithZkUrls(zkAddr),
+			util.WithTracerUrl("localhost:6831"),
+		)
+		defer util.Ctx.CloseRegisterSvc()
+		util.Ctx.InitRegisterSvc()
+		util.Ctx.InitPubEngineSvc()
+		util.Ctx.InitMessageDispatcherSvc()
 
 		var redisClusterAddr string
 		cmd.Flags().StringVarP(&redisClusterAddr, "redisClusterAddr", "r", "127.0.0.1:7000", "redis cluster address")
