@@ -26,13 +26,14 @@ require (
 	github.com/micro/go-plugins v1.3.0
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f // indirect
 	github.com/natefinch/lumberjack v2.0.0+incompatible // indirect
+	github.com/opentracing/opentracing-go v1.1.0
 	github.com/pkg/errors v0.8.1
 	github.com/posener/complete v1.2.1 // indirect
 	github.com/prometheus/tsdb v0.7.1 // indirect
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.4.0
-	github.com/tian-yuan/iot-common v0.0.4
+	github.com/tian-yuan/iot-common v0.0.6
 	golang.org/x/mobile v0.0.0-20190806162312-597adff16ade // indirect
 	golang.org/x/sys v0.0.0-20190812073006-9eafafc0a87e // indirect
 	golang.org/x/tools v0.0.0-20190809145639-6d4652c779c4 // indirect

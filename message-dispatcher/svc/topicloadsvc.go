@@ -3,17 +3,22 @@ package svc
 import (
 	"context"
 	"fmt"
+	"io"
 	"sync"
 	"time"
 
 	"github.com/micro/go-micro/client"
 	"github.com/micro/go-micro/client/selector"
+	"github.com/micro/go-micro/metadata"
 	"github.com/micro/go-micro/registry"
 	"github.com/micro/go-micro/util/log"
 	"github.com/micro/go-plugins/registry/zookeeper"
+	ocplugin "github.com/micro/go-plugins/wrapper/trace/opentracing"
+	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/samuel/go-zookeeper/zk"
 	"github.com/tian-yuan/CMQ/message-dispatcher/consistent"
 	proto "github.com/tian-yuan/iot-common/iotpb"
+	"github.com/tian-yuan/iot-common/plugins/tracer"
 	"github.com/tian-yuan/iot-common/util"
 )
 
@@ -23,6 +28,7 @@ type TopicLoadSvc struct {
 	Consistent *consistent.Consistent
 
 	client client.Client
+	closer io.Closer
 	done   chan bool
 	ticker *time.Ticker
 
@@ -59,7 +65,7 @@ func (svc *TopicLoadSvc) startTopicController(zkAddr []string) {
 	}
 }
 
-func (svc *TopicLoadSvc) Start(zkAddr []string) {
+func (svc *TopicLoadSvc) Start(zkAddr []string, tracerAddr string) {
 	svc.startTopicController(zkAddr)
 
 	svc.Consistent = consistent.New()
@@ -75,7 +81,16 @@ func (svc *TopicLoadSvc) Start(zkAddr []string) {
 		client.Registry(r),
 	)
 	c.Options().Selector.Init(selector.Registry(r))
-	svc.client = c
+
+	clientSvcName := util.TOPIC_MANAGER_SVC + ".client"
+	t, io, err := tracer.NewTracer(clientSvcName, tracerAddr)
+	if err == nil {
+		clientWrapper := ocplugin.NewClientWrapper(t)
+		svc.client = clientWrapper(c)
+		svc.closer = io
+	} else {
+		svc.client = c
+	}
 
 	svc.ServiceCache = New(r, handleServiceUpdate)
 
@@ -96,6 +111,9 @@ func (svc *TopicLoadSvc) Start(zkAddr []string) {
 }
 
 func (svc *TopicLoadSvc) Stop() {
+	if svc.closer != nil {
+		svc.closer.Close()
+	}
 	svc.ticker.Stop()
 	svc.done <- true
 	svc.lock.Unlock()
@@ -118,12 +136,24 @@ func (svc *TopicLoadSvc) TopicReloadRequest(address string, seg string) error {
 	return nil
 }
 
-func (svc *TopicLoadSvc) Subscribe(in *proto.SubscribeMessageRequest, out *proto.SubscribeMessageResponse) error {
+func (svc *TopicLoadSvc) Subscribe(ctx context.Context, in *proto.SubscribeMessageRequest, out *proto.SubscribeMessageResponse) error {
 	// should send to topic acl and get topic id
 	// should send topic subscribe request to acl to check the acl and obtain the topic id
+	md, ok := metadata.FromContext(ctx)
+	if !ok {
+		md = make(map[string]string)
+	}
+	wireContext, _ := opentracing.GlobalTracer().Extract(opentracing.TextMap, opentracing.TextMapCarrier(md))
+	// create new span and bind with context
+	ssp := opentracing.StartSpan("Subscribe-TopicAcl", opentracing.ChildOf(wireContext))
+	// record request
+	ssp.SetTag("req", in)
+	// before function return stop span, cuz span will counted how much time of this function spent
+	defer ssp.Finish()
+
 	topicAclCli := proto.NewTopicAclService(util.TOPIC_ACL_SVC,
-		util.Ctx.TopicManagerSvc.Client())
-	out, err := topicAclCli.Subscribe(context.TODO(), in)
+		util.Ctx.TopicAclSvc.Client())
+	out, err := topicAclCli.Subscribe(opentracing.ContextWithSpan(context.Background(), ssp), in)
 	if err != nil {
 		log.Error("publish subscribe message to topic acl service failed.")
 		return err
@@ -131,8 +161,12 @@ func (svc *TopicLoadSvc) Subscribe(in *proto.SubscribeMessageRequest, out *proto
 		log.Infof("publish subscribe message to topic acl success, rsp : %s", out.Message)
 	}
 
+	tssp := opentracing.StartSpan("Subscribe-TopicManager", opentracing.ChildOf(wireContext))
+	defer tssp.Finish()
 	addr, err := Global.TopicLoadSvc.Consistent.Get(fmt.Sprintf("%d", out.TopicId))
-	if err != nil {
+	tssp.SetTag("req", in)
+	tssp.SetTag("topic.load.svc.addr", addr)
+	if err != nil || addr == "" {
 		log.Errorf("get topic manager service failed.")
 		return err
 	}
@@ -141,7 +175,7 @@ func (svc *TopicLoadSvc) Subscribe(in *proto.SubscribeMessageRequest, out *proto
 
 	req := svc.client.NewRequest(service, endpoint, in)
 
-	if err := svc.client.Call(context.Background(), req, out, client.WithAddress(addr)); err != nil {
+	if err := svc.client.Call(opentracing.ContextWithSpan(context.Background(), tssp), req, out, client.WithAddress(addr)); err != nil {
 		log.Errorf("call with address error", err)
 		return err
 	}

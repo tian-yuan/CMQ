@@ -1,9 +1,9 @@
 package commands
 
 import (
-	"github.com/spf13/cobra"
-
 	"strings"
+
+	"github.com/spf13/cobra"
 
 	"github.com/micro/go-micro/util/log"
 	"github.com/tian-yuan/CMQ/message-dispatcher/svc"
@@ -18,16 +18,25 @@ var httpCmd = &cobra.Command{
 
 		var zkAddr string
 		cmd.Flags().StringVarP(&zkAddr, "zkAddress", "z", "127.0.0.1:2181", "zk address array")
-		log.Infof("start discovery client, zk address : %s", zkAddr)
 		zkAddrArr := strings.Split(zkAddr, ";")
-		util.Ctx.InitTopicManagerSvc(zkAddrArr)
+		log.Infof("start discovery client, zk address : %s", zkAddr)
+		var tracerAddr string
+		cmd.Flags().StringVarP(&tracerAddr, "tracerAddress", "j", "127.0.0.1:6831", "tracer address array")
+
+		util.Init(
+			util.WithZkUrls(zkAddr),
+			util.WithTracerUrl(tracerAddr),
+		)
+		defer util.Ctx.CloseMessageDispatcherSvc()
+
+		util.Ctx.InitTopicAclSvc()
+		util.Ctx.InitTopicManagerSvc()
 
 		topicSvc := svc.NewTopicLoadSvc()
 		svc.Global.TopicLoadSvc = topicSvc
-		go topicSvc.Start(zkAddrArr)
+		go topicSvc.Start(zkAddrArr, tracerAddr)
 
 		rpcSvc := svc.NewRpcSvc()
-		util.Ctx.InitTopicAclSvc(zkAddrArr)
-		rpcSvc.Start(zkAddrArr)
+		rpcSvc.Start(zkAddrArr, tracerAddr)
 	},
 }

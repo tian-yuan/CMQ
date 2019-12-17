@@ -7,7 +7,9 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/micro/go-micro/metadata"
 	"github.com/micro/go-micro/util/log"
+	opentracing "github.com/opentracing/opentracing-go"
 	proto "github.com/tian-yuan/iot-common/iotpb"
 )
 
@@ -84,9 +86,29 @@ func (h *rpchandler) LoadSubTopic(ctx context.Context, in *proto.SubTopicLoadReq
 
 func (h *rpchandler) Subscribe(ctx context.Context, in *proto.SubscribeMessageRequest, out *proto.SubscribeMessageResponse) error {
 	log.Infof("handler subscribe message, topic : %s", in.TopicFilter)
+	// get tracing info from context
+	md, ok := metadata.FromContext(ctx)
+	if !ok {
+		md = make(map[string]string)
+	}
+	var sp opentracing.Span
+	wireContext, _ := opentracing.GlobalTracer().Extract(opentracing.TextMap, opentracing.TextMapCarrier(md))
+	// create new span and bind with context
+	sp = opentracing.StartSpan("Subscribe", opentracing.ChildOf(wireContext))
+	// record request
+	sp.SetTag("req", in)
+	defer func() {
+		// record response
+		sp.SetTag("res", out)
+		// before function return stop span, cuz span will counted how much time of this function spent
+		sp.Finish()
+	}()
+
 	err := Ctx.Subscribe(in.TopicFilter, int(in.Qos), in.Guid)
 	if err != nil {
 		log.Errorf("subscribe topic failed, topic : %s", in.TopicFilter)
+		out.Code = 600
+		out.Message = err.Error()
 	}
 	// should write to database
 	out.Code = 200
@@ -97,5 +119,23 @@ func (h *rpchandler) Subscribe(ctx context.Context, in *proto.SubscribeMessageRe
 
 func (h *rpchandler) UnSubscribe(ctx context.Context, in *proto.UnSubscribeMessageRequest, out *proto.UnSubscribeMessageResponse) error {
 	log.Info("handle unsubscribe message request.")
+	// get tracing info from context
+	md, ok := metadata.FromContext(ctx)
+	if !ok {
+		md = make(map[string]string)
+	}
+	var sp opentracing.Span
+	wireContext, _ := opentracing.GlobalTracer().Extract(opentracing.TextMap, opentracing.TextMapCarrier(md))
+	// create new span and bind with context
+	sp = opentracing.StartSpan("Subscribe", opentracing.ChildOf(wireContext))
+	// record request
+	sp.SetTag("req", in)
+	defer func() {
+		// record response
+		sp.SetTag("res", out)
+		// before function return stop span, cuz span will counted how much time of this function spent
+		sp.Finish()
+	}()
+
 	return nil
 }

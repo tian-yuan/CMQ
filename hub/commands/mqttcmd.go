@@ -25,7 +25,7 @@ var mqttCmd = &cobra.Command{
 		log.Infof("start discovery client, zk address : %s", zkAddr)
 		util.Init(
 			util.WithZkUrls(zkAddr),
-			util.WithTracerUrl("localhost:6831"),
+			util.WithTracerUrl(tracerAddr),
 		)
 		defer util.Ctx.CloseRegisterSvc()
 		util.Ctx.InitRegisterSvc()

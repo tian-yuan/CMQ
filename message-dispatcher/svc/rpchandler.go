@@ -23,7 +23,7 @@ func (h *rpchandler) PublishMessage(ctx context.Context, in *proto.PublishMessag
 
 func (h *rpchandler) Subscribe(ctx context.Context, in *proto.SubscribeMessageRequest, out *proto.SubscribeMessageResponse) error {
 	// send subscribe message to iot topic manager
-	err := Global.TopicLoadSvc.Subscribe(in, out)
+	err := Global.TopicLoadSvc.Subscribe(ctx, in, out)
 	if err != nil {
 		log.Errorf("subscribe to topic manager failed, err : %v.", err)
 	}

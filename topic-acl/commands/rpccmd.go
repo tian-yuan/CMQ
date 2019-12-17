@@ -20,7 +20,15 @@ var httpCmd = &cobra.Command{
 		cmd.Flags().StringVarP(&zkAddr, "zkAddress", "z", "127.0.0.1:2181", "zk address array")
 		log.Infof("start discovery client, zk address : %s", zkAddr)
 		zkAddrArr := strings.Split(zkAddr, ";")
-		util.Ctx.InitTopicManagerSvc(zkAddrArr)
+		var tracerAddr string
+		cmd.Flags().StringVarP(&tracerAddr, "tracerAddress", "j", "127.0.0.1:6831", "tracer address array")
+
+		util.Init(
+			util.WithZkUrls(zkAddr),
+			util.WithTracerUrl(tracerAddr),
+		)
+		util.Ctx.InitTopicManagerSvc()
+		defer util.Ctx.CloseTopicAclSvc()
 
 		log.Info("begin to start mysql client.")
 		var mysqlhost string
@@ -43,6 +51,6 @@ var httpCmd = &cobra.Command{
 		svc.Global.TopicSvc.Start()
 
 		rpcSvc := svc.NewRpcSvc()
-		rpcSvc.Start(zkAddrArr)
+		rpcSvc.Start(zkAddrArr, tracerAddr)
 	},
 }

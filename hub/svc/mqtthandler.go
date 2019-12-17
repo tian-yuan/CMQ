@@ -8,13 +8,13 @@ import (
 	"strings"
 	"time"
 
+	"github.com/micro/go-micro/metadata"
 	"github.com/micro/go-micro/util/log"
+	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/tian-yuan/CMQ/hub/proto/mqtt"
 	proto "github.com/tian-yuan/iot-common/iotpb"
 	"github.com/tian-yuan/iot-common/util"
 	"golang.org/x/net/context"
-	"github.com/micro/go-micro/metadata"
-	opentracing "github.com/opentracing/opentracing-go"
 )
 
 func init() {
@@ -161,6 +161,20 @@ func (ctx *ClientCtx) handlePacket(p interface{}) error {
 
 var sessionPresent = true
 
+func startSpan() (opentracing.Span, context.Context) {
+	span, tctx := opentracing.StartSpanFromContext(context.Background(), "call")
+	md, ok := metadata.FromContext(tctx)
+	if !ok {
+		md = make(map[string]string)
+	}
+	defer span.Finish()
+	// inject opentracing textmap into empty context, for tracking
+	opentracing.GlobalTracer().Inject(span.Context(), opentracing.TextMap, opentracing.TextMapCarrier(md))
+	tctx = opentracing.ContextWithSpan(tctx, span)
+	tctx = metadata.NewContext(tctx, md)
+	return span, tctx
+}
+
 func (ctx *ClientCtx) handleConnectPacket(p *mqtt.ConnectPacket) error {
 	if ctx.hasConnected {
 		log.Errorf("Receive 2nd connect packet")
@@ -191,16 +205,8 @@ func (ctx *ClientCtx) handleConnectPacket(p *mqtt.ConnectPacket) error {
 		WillTopic: p.WillTopic,
 	}
 
-	span, tctx := opentracing.StartSpanFromContext(context.Background(), "call")
-	md, ok := metadata.FromContext(tctx)
-	if !ok {
-		md = make(map[string]string)
-	}
+	span, tctx := startSpan()
 	defer span.Finish()
-	// inject opentracing textmap into empty context, for tracking
-	opentracing.GlobalTracer().Inject(span.Context(), opentracing.TextMap, opentracing.TextMapCarrier(md))
-	tctx = opentracing.ContextWithSpan(tctx, span)
-	tctx = metadata.NewContext(tctx, md)
 
 	rsp, err := registerCli.Registry(tctx, &conMsg)
 	if err != nil {
@@ -314,6 +320,9 @@ func (ctx *ClientCtx) publishForward(p *mqtt.PublishPacket) error {
 		log.Errorf("Qos 2 is not supported")
 		return errors.New("Qos 2 is not supported")
 	} else if p.Header.Qos() == 1 {
+		span, tctx := startSpan()
+		defer span.Finish()
+
 		pubEnginCli := proto.NewPublishEngineService(util.PUBLISH_ENGINE_SVC, util.Ctx.PubEngineSvc.Client())
 		pubMsg := proto.PublishMessageRequest{
 			Header: &proto.MessageHeader{
@@ -322,7 +331,7 @@ func (ctx *ClientCtx) publishForward(p *mqtt.PublishPacket) error {
 			Topic:   p.Topic,
 			Payload: p.Payload,
 		}
-		_, err := pubEnginCli.PublishMessage(context.TODO(), &pubMsg)
+		_, err := pubEnginCli.PublishMessage(tctx, &pubMsg)
 		if err != nil {
 			log.Errorf("publish to publish engine failed, error message : %v.", err)
 		}
@@ -379,6 +388,9 @@ func (ctx *ClientCtx) handleSubscribePacket(p *mqtt.SubscribePacket) error {
 
 	codes := make([]int8, len(p.Topics))
 
+	span, tctx := startSpan()
+	defer span.Finish()
+
 	messageDispatcherCli := proto.NewMessageDispatcherService(util.MESSAGE_DISPATCHER_SVC,
 		util.Ctx.MessageDispatcherSvc.Client())
 	for i, _ := range p.Topics {
@@ -387,7 +399,9 @@ func (ctx *ClientCtx) handleSubscribePacket(p *mqtt.SubscribePacket) error {
 			Qos:         int32(p.Qoss[i]),
 			Guid:        ctx.guid,
 		}
-		_, err := messageDispatcherCli.Subscribe(context.TODO(), &subMsg)
+		span.SetTag("req", subMsg)
+		span.SetTag("from-to", "hub-dispater")
+		_, err := messageDispatcherCli.Subscribe(tctx, &subMsg)
 		if err != nil {
 			log.Error("send subscribe message to message dispatcher failed, error message.")
 			codes[i] = -2
@@ -423,13 +437,16 @@ func (ctx *ClientCtx) handleUnsubPacket(p *mqtt.UnsubscribePacket) error {
 		return errors.New("Client has not been connected before")
 	}
 
+	span, tctx := startSpan()
+	defer span.Finish()
+
 	messageDispatcherCli := proto.NewMessageDispatcherService(util.MESSAGE_DISPATCHER_SVC,
 		util.Ctx.MessageDispatcherSvc.Client())
 	for i, _ := range p.Topics {
 		unSubMsg := proto.UnSubscribeMessageRequest{
 			TopicFilter: p.Topics[i],
 		}
-		rsp, err := messageDispatcherCli.UnSubscribe(context.TODO(), &unSubMsg)
+		rsp, err := messageDispatcherCli.UnSubscribe(tctx, &unSubMsg)
 		if err != nil {
 			log.Errorf("send unsubscribe message to message dispather failed, error message : %s", rsp.Message)
 		}

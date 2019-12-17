@@ -21,6 +21,15 @@ var rpccmd = &cobra.Command{
 		log.Infof("start discovery client, zk address : %s", zkAddr)
 		zkAddrArr := strings.Split(zkAddr, ";")
 
+		var tracerAddr string
+		cmd.Flags().StringVarP(&tracerAddr, "tracerAddress", "j", "127.0.0.1:6831", "tracer address array")
+
+		util.Init(
+			util.WithZkUrls(zkAddr),
+			util.WithTracerUrl(tracerAddr),
+		)
+		defer util.Ctx.CloseTopicManagerSvc()
+
 		var redisClusterAddr string
 		cmd.Flags().StringVarP(&redisClusterAddr, "redisClusterAddr", "r", "127.0.0.1:7000", "redis cluster address")
 		var reqTimeout time.Duration
@@ -40,6 +49,6 @@ var rpccmd = &cobra.Command{
 		svc.Global.RedisClient = redisClient
 
 		rpcSvc := svc.NewRpcSvc()
-		rpcSvc.Start(zkAddrArr)
+		rpcSvc.Start(zkAddrArr, tracerAddr)
 	},
 }
