@@ -7,6 +7,8 @@ import (
 	"sync"
 
 	"github.com/micro/go-micro/util/log"
+	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/tian-yuan/iot-common/plugins/tracer"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 )
@@ -40,7 +42,7 @@ func NewH2cSvc(conf *H2cConf) *H2cSvc {
 	}
 }
 
-func (cs *H2cSvc) Start() {
+func (cs *H2cSvc) Start(tracerAddr string) {
 	log.Info("start h2c server.")
 
 	addr := net.JoinHostPort(cs.Conf.Host, strconv.Itoa(int(cs.Conf.Port)))
@@ -53,6 +55,14 @@ func (cs *H2cSvc) Start() {
 		Addr:    addr,
 		Handler: h2c.NewHandler(handler, h2s),
 	}
+
+	t, io, err := tracer.NewTracer("iot.hub.svc", tracerAddr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer io.Close()
+	// set var t to Global Tracer (opentracing single instance mode)
+	opentracing.SetGlobalTracer(t)
 
 	server.ListenAndServe()
 }

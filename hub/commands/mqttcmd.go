@@ -28,6 +28,8 @@ var mqttCmd = &cobra.Command{
 			util.WithTracerUrl(tracerAddr),
 		)
 		defer util.Ctx.CloseRegisterSvc()
+		defer util.Ctx.ClosePubEngineSvc()
+		defer util.Ctx.CloseMessageDispatcherSvc()
 		util.Ctx.InitRegisterSvc()
 		util.Ctx.InitPubEngineSvc()
 		util.Ctx.InitMessageDispatcherSvc()
@@ -63,6 +65,6 @@ var mqttCmd = &cobra.Command{
 		svc.Global.SessionPrefix = httpconf.Host + ":" + fmt.Sprintf("%d", httpconf.Port)
 		log.Infof("session prefix : %s", svc.Global.SessionPrefix)
 		h2cSvc := svc.NewH2cSvc(httpconf)
-		h2cSvc.Start()
+		h2cSvc.Start(tracerAddr)
 	},
 }

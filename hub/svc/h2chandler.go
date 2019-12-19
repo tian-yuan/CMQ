@@ -7,6 +7,8 @@ import (
 	"strconv"
 
 	"github.com/micro/go-micro/util/log"
+	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/opentracing/opentracing-go/ext"
 )
 
 // iot message dispatcher publish
@@ -46,6 +48,23 @@ func queryContext(r *http.Request) (*ClientCtx, string) {
 }
 
 func handlePublish(w http.ResponseWriter, r *http.Request) {
+	wireContext, err := opentracing.GlobalTracer().Extract(
+		opentracing.HTTPHeaders,
+		opentracing.HTTPHeadersCarrier(r.Header),
+	)
+	if err != nil {
+		// Optionally record something about err here
+	}
+
+	// Create the span referring to the RPC client if available.
+	// If wireContext == nil, a root span will be created.
+	serverSpan := opentracing.StartSpan(
+		"IotHub-HandlePublish",
+		ext.RPCServerOption(wireContext),
+	)
+
+	defer serverSpan.Finish()
+
 	ctx, errMsg := queryContext(r)
 	if ctx != nil {
 		deviceName := r.FormValue("deviceName")
@@ -57,6 +76,7 @@ func handlePublish(w http.ResponseWriter, r *http.Request) {
 		if msg == "" ||
 			topic == "" || qosStr == "" {
 			log.Infof("Bad publish message request, %v", r)
+			serverSpan.SetTag("message", "bad request.")
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -64,6 +84,7 @@ func handlePublish(w http.ResponseWriter, r *http.Request) {
 		qos, e := strconv.Atoi(qosStr)
 		if e != nil {
 			log.Infof("Bad publish message request, qos is not number")
+			serverSpan.SetTag("message", "bad request.")
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
@@ -79,8 +100,11 @@ func handlePublish(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		body := fmt.Sprintf("{\"code\": %d}", code)
+		serverSpan.SetTag("message", "publish message to device success.")
 		w.Write([]byte(body))
 		return
+	} else {
+		serverSpan.SetTag("message", "find device connection info failed.")
 	}
 
 	log.Infof("Bad publish message request, %v, error: %s", r, errMsg)

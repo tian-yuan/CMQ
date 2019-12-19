@@ -161,8 +161,8 @@ func (ctx *ClientCtx) handlePacket(p interface{}) error {
 
 var sessionPresent = true
 
-func startSpan() (opentracing.Span, context.Context) {
-	span, tctx := opentracing.StartSpanFromContext(context.Background(), "call")
+func startSpan(opName string) (opentracing.Span, context.Context) {
+	span, tctx := opentracing.StartSpanFromContext(context.Background(), opName)
 	md, ok := metadata.FromContext(tctx)
 	if !ok {
 		md = make(map[string]string)
@@ -205,7 +205,7 @@ func (ctx *ClientCtx) handleConnectPacket(p *mqtt.ConnectPacket) error {
 		WillTopic: p.WillTopic,
 	}
 
-	span, tctx := startSpan()
+	span, tctx := startSpan("Connect")
 	defer span.Finish()
 
 	rsp, err := registerCli.Registry(tctx, &conMsg)
@@ -320,7 +320,7 @@ func (ctx *ClientCtx) publishForward(p *mqtt.PublishPacket) error {
 		log.Errorf("Qos 2 is not supported")
 		return errors.New("Qos 2 is not supported")
 	} else if p.Header.Qos() == 1 {
-		span, tctx := startSpan()
+		span, tctx := startSpan("Publish")
 		defer span.Finish()
 
 		pubEnginCli := proto.NewPublishEngineService(util.PUBLISH_ENGINE_SVC, util.Ctx.PubEngineSvc.Client())
@@ -331,6 +331,7 @@ func (ctx *ClientCtx) publishForward(p *mqtt.PublishPacket) error {
 			Topic:   p.Topic,
 			Payload: p.Payload,
 		}
+		span.SetTag("req", pubMsg)
 		_, err := pubEnginCli.PublishMessage(tctx, &pubMsg)
 		if err != nil {
 			log.Errorf("publish to publish engine failed, error message : %v.", err)
@@ -388,7 +389,7 @@ func (ctx *ClientCtx) handleSubscribePacket(p *mqtt.SubscribePacket) error {
 
 	codes := make([]int8, len(p.Topics))
 
-	span, tctx := startSpan()
+	span, tctx := startSpan("Subscribe")
 	defer span.Finish()
 
 	messageDispatcherCli := proto.NewMessageDispatcherService(util.MESSAGE_DISPATCHER_SVC,
@@ -437,7 +438,7 @@ func (ctx *ClientCtx) handleUnsubPacket(p *mqtt.UnsubscribePacket) error {
 		return errors.New("Client has not been connected before")
 	}
 
-	span, tctx := startSpan()
+	span, tctx := startSpan("UnSubscribe")
 	defer span.Finish()
 
 	messageDispatcherCli := proto.NewMessageDispatcherService(util.MESSAGE_DISPATCHER_SVC,

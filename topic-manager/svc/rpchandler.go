@@ -18,9 +18,21 @@ type rpchandler struct {
 
 const hubPublishPath = "/v1/imd/publish"
 
-func publishMessageToHub(info string, message string, topic string, qos int8) error {
+func publishMessageToHub(ctx context.Context, info string, message string, topic string, qos int8) error {
 	log.Infof("publish message to hub, info : %s, message : %s, topic : %s, qos : %d",
 		info, message, topic, qos)
+	md, ok := metadata.FromContext(ctx)
+	if !ok {
+		md = make(map[string]string)
+	}
+	wireContext, _ := opentracing.GlobalTracer().Extract(opentracing.TextMap, opentracing.TextMapCarrier(md))
+	// create new span and bind with context
+	span := opentracing.StartSpan("PublishMessage-IotHub", opentracing.ChildOf(wireContext))
+	// record request
+	// before function return stop span, cuz span will counted how much time of this function spent
+	defer span.Finish()
+
+	span.SetTag("hub-addr", info)
 	// split session info
 	infos := strings.Split(info, ":")
 	addr := infos[0]
@@ -43,14 +55,17 @@ func publishMessageToHub(info string, message string, topic string, qos int8) er
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
 		log.Errorf("Construct http request error")
+		span.SetTag("Message", err.Error())
 		return err
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 
+	opentracing.GlobalTracer().Inject(span.Context(), opentracing.HTTPHeaders, opentracing.HTTPHeadersCarrier(req.Header))
 	_, err = cli.Do(req)
 	if err != nil {
 		log.Errorf("publish message to hub failed.")
+		span.SetTag("Message", err.Error())
 		return nil
 	}
 	log.Infof("publish message to hub success.")
@@ -59,7 +74,21 @@ func publishMessageToHub(info string, message string, topic string, qos int8) er
 
 func (h *rpchandler) PublishMessage(ctx context.Context, in *proto.PublishMessageRequest, out *proto.PublishMessageResponse) error {
 	log.Infof("topic manager receive publish message.")
+	md, ok := metadata.FromContext(ctx)
+	if !ok {
+		md = make(map[string]string)
+	}
+	var sp opentracing.Span
+	wireContext, _ := opentracing.GlobalTracer().Extract(opentracing.TextMap, opentracing.TextMapCarrier(md))
+	// create new span and bind with context
+	sp = opentracing.StartSpan("PublishMessageMatch", opentracing.ChildOf(wireContext))
+	// record request
+	sp.SetTag("req", in)
+	sp.SetTag("res", out)
+	sp.Finish()
+
 	subs := Ctx.Match(in.Topic)
+	sp.SetTag("subs", subs)
 	for _, sub := range subs {
 		// get guid from subs
 		guid := sub.(uint32)
@@ -72,7 +101,7 @@ func (h *rpchandler) PublishMessage(ctx context.Context, in *proto.PublishMessag
 		}
 		// send request to hub
 		val := r.Val()
-		publishMessageToHub(val, string(in.Payload), in.Topic, int8(in.Header.Qos))
+		publishMessageToHub(ctx, val, string(in.Payload), in.Topic, int8(in.Header.Qos))
 	}
 	out.Code = 200
 	out.Message = "publish success."

@@ -182,7 +182,7 @@ func (svc *TopicLoadSvc) Subscribe(ctx context.Context, in *proto.SubscribeMessa
 	return nil
 }
 
-func (svc *TopicLoadSvc) UnSubscribe(in *proto.UnSubscribeMessageRequest, out *proto.UnSubscribeMessageResponse) error {
+func (svc *TopicLoadSvc) UnSubscribe(ctx context.Context, in *proto.UnSubscribeMessageRequest, out *proto.UnSubscribeMessageResponse) error {
 	// should send to topic acl and get topic id
 	addr, err := Global.TopicLoadSvc.Consistent.Get(fmt.Sprintf("%d", in.Guid))
 	if err != nil {
@@ -201,27 +201,48 @@ func (svc *TopicLoadSvc) UnSubscribe(in *proto.UnSubscribeMessageRequest, out *p
 	return nil
 }
 
-func (svc *TopicLoadSvc) PublishMessage(in *proto.PublishMessageRequest, out *proto.PublishMessageResponse) error {
+func (svc *TopicLoadSvc) PublishMessage(ctx context.Context, in *proto.PublishMessageRequest, out *proto.PublishMessageResponse) error {
+	md, ok := metadata.FromContext(ctx)
+	if !ok {
+		md = make(map[string]string)
+	}
+	wireContext, _ := opentracing.GlobalTracer().Extract(opentracing.TextMap, opentracing.TextMapCarrier(md))
+	// create new span and bind with context
+	ssp := opentracing.StartSpan("Publish-TopicManager", opentracing.ChildOf(wireContext))
+	// record request
+	ssp.SetTag("req", in)
+	// before function return stop span, cuz span will counted how much time of this function spent
+	defer ssp.Finish()
+	ssp.SetTag("res", out)
+
 	services, err := Global.TopicLoadSvc.ServiceCache.GetService(util.TOPIC_MANAGER_SVC)
 	if err != nil {
 		log.Errorf("get service for topic manager failed.", err)
+		out.Code = 600
+		out.Message = err.Error()
 		return err
 	}
 
 	if services == nil || len(services) == 0 {
+		out.Code = 600
+		out.Message = "TopicManager service is not online."
 		return fmt.Errorf("get service empty.")
 	}
 
 	for _, service := range services {
+		log.Infof("publish message to services : %s, node size : %d", service.Name, len(service.Nodes))
 		for _, node := range service.Nodes {
+			log.Infof("publish message to node : %s", node.Address)
 			service := util.TOPIC_MANAGER_SVC
 			endpoint := "TopicManager.PublishMessage"
 
 			req := svc.client.NewRequest(service, endpoint, in)
 
-			if err := svc.client.Call(context.Background(), req, out, client.WithAddress(node.Address)); err != nil {
-				log.Errorf("call with address error", err)
+			if err := svc.client.Call(opentracing.ContextWithSpan(context.Background(), ssp), req, out, client.WithAddress(node.Address)); err != nil {
+				log.Errorf("call with address error : %s", err.Error())
 				// if qos is 1 or 2, we should add the message to queue
+			} else {
+				log.Infof("publish message to topic manager : %s success.", node.Address)
 			}
 		}
 	}

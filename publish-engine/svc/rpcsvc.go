@@ -6,8 +6,12 @@ import (
 
 	"github.com/micro/go-micro"
 	"github.com/micro/go-micro/registry"
+	"github.com/micro/go-micro/util/log"
 	"github.com/micro/go-plugins/registry/zookeeper"
+	ocplugin "github.com/micro/go-plugins/wrapper/trace/opentracing"
+	opentracing "github.com/opentracing/opentracing-go"
 	proto "github.com/tian-yuan/iot-common/iotpb"
+	"github.com/tian-yuan/iot-common/plugins/tracer"
 	"github.com/tian-yuan/iot-common/util"
 )
 
@@ -18,7 +22,7 @@ func NewRpcSvc() *RpcSvc {
 	return &RpcSvc{}
 }
 
-func (svc *RpcSvc) Start(zkAddr []string) {
+func (svc *RpcSvc) Start(zkAddr []string, tracerAddr string) {
 	optFunc := func(opt *registry.Options) {
 		opt = &registry.Options{
 			Addrs: zkAddr,
@@ -26,12 +30,21 @@ func (svc *RpcSvc) Start(zkAddr []string) {
 	}
 	registry := zookeeper.NewRegistry(optFunc)
 
+	t, io, err := tracer.NewTracer(util.PUBLISH_ENGINE_SVC, tracerAddr)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer io.Close()
+	// set var t to Global Tracer (opentracing single instance mode)
+	opentracing.SetGlobalTracer(t)
+
 	// Create a new service. Optionally include some options here.
 	service := micro.NewService(
 		micro.Name(util.PUBLISH_ENGINE_SVC),
 		micro.Registry(registry),
 		micro.RegisterTTL(time.Second*30),
 		micro.RegisterInterval(time.Second*10),
+		micro.WrapHandler(ocplugin.NewHandlerWrapper(opentracing.GlobalTracer())), // add tracing plugin in to middleware
 	)
 
 	// Init will parse the command line flags.

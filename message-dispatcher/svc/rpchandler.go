@@ -14,7 +14,7 @@ func (h *rpchandler) PublishMessage(ctx context.Context, in *proto.PublishMessag
 	log.Infof("message dispatcher service receive publish message, topic: %s, payload : %s",
 		in.Topic, string(in.Payload))
 
-	err := Global.TopicLoadSvc.PublishMessage(in, out)
+	err := Global.TopicLoadSvc.PublishMessage(ctx, in, out)
 	if err != nil {
 		log.Errorf("publish to topic manager failed, error : %v.", err)
 	}
@@ -31,7 +31,7 @@ func (h *rpchandler) Subscribe(ctx context.Context, in *proto.SubscribeMessageRe
 }
 
 func (h *rpchandler) UnSubscribe(ctx context.Context, in *proto.UnSubscribeMessageRequest, out *proto.UnSubscribeMessageResponse) error {
-	err := Global.TopicLoadSvc.UnSubscribe(in, out)
+	err := Global.TopicLoadSvc.UnSubscribe(ctx, in, out)
 	if err != nil {
 		log.Errorf("unsubscribe to topic manager failed, err : %v.", err)
 	}

@@ -27,10 +27,11 @@ var httpCmd = &cobra.Command{
 			util.WithZkUrls(zkAddr),
 			util.WithTracerUrl(tracerAddr),
 		)
-		defer util.Ctx.CloseMessageDispatcherSvc()
 
 		util.Ctx.InitTopicAclSvc()
+		defer util.Ctx.CloseTopicAclSvc()
 		util.Ctx.InitTopicManagerSvc()
+		defer util.Ctx.CloseTopicManagerSvc()
 
 		topicSvc := svc.NewTopicLoadSvc()
 		svc.Global.TopicLoadSvc = topicSvc

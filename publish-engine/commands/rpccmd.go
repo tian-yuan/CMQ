@@ -19,9 +19,18 @@ var httpCmd = &cobra.Command{
 		cmd.Flags().StringVarP(&zkAddr, "zkAddress", "z", "127.0.0.1:2181", "zk address array")
 		log.Infof("start publish engine service, zk address : %s", zkAddr)
 		zkAddrArr := strings.Split(zkAddr, ";")
-		util.Ctx.InitMessageDispatcherSvc(zkAddrArr)
+		var tracerAddr string
+		cmd.Flags().StringVarP(&tracerAddr, "tracerAddress", "j", "127.0.0.1:6831", "tracer address array")
+
+		util.Init(
+			util.WithZkUrls(zkAddr),
+			util.WithTracerUrl(tracerAddr),
+		)
+		util.Ctx.InitMessageDispatcherSvc()
+		// close the client tracer
+		defer util.Ctx.CloseMessageDispatcherSvc()
 
 		rpcSvc := svc.NewRpcSvc()
-		rpcSvc.Start(zkAddrArr)
+		rpcSvc.Start(zkAddrArr, tracerAddr)
 	},
 }
