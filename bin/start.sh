@@ -1,0 +1,11 @@
+#!/bin/bash
+
+export IOT_HUB_CONFIG_LOG_APPNAME=iothub
+export IOT_CONTROLLER_CONFIG_LOG_APPNAME=controller
+export IOT_DISPATCHER_CONFIG_LOG_APPNAME=dispatcher
+export IOT_ENGINE_CONFIG_LOG_APPNAME=engine
+export IOT_REGISTRY_CONFIG_LOG_APPNAME=registry
+export IOT_TOPICACL_CONFIG_LOG_APPNAME=topicacl
+export IOT_TOPICMANAGER_CONFIG_LOG_APPNAME=topicmanager
+
+goreman start

@@ -1,0 +1,22 @@
+{
+  "out": {
+    "name": "stderr",
+    "options": {}
+  },
+  "level": "info",
+  "formatter": {
+    "name": "json"
+  },
+  "hooks": [{
+    "name": "file",
+    "options": {
+      "filename": "logs/engine.log",
+      "maxsize": 104857600,
+      "maxdays": 1,
+      "rotate": true,
+      "level": "info",
+      "priority": "LOG_INFO",
+      "tag": ""
+    }
+  }]
+}
