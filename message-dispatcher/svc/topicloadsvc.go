@@ -12,7 +12,7 @@ import (
 	"github.com/micro/go-micro/metadata"
 	"github.com/micro/go-micro/registry"
 	"github.com/micro/go-micro/util/log"
-	"github.com/micro/go-plugins/registry/zookeeper"
+	"github.com/micro/go-plugins/registry/etcdv3"
 	ocplugin "github.com/micro/go-plugins/wrapper/trace/opentracing"
 	opentracing "github.com/opentracing/opentracing-go"
 	"github.com/samuel/go-zookeeper/zk"
@@ -37,7 +37,9 @@ type TopicLoadSvc struct {
 }
 
 func NewTopicLoadSvc() *TopicLoadSvc {
-	return &TopicLoadSvc{}
+	return &TopicLoadSvc{
+		Consistent: consistent.New(),
+	}
 }
 
 func (svc *TopicLoadSvc) startTopicController(zkAddr []string) {
@@ -65,18 +67,16 @@ func (svc *TopicLoadSvc) startTopicController(zkAddr []string) {
 	}
 }
 
-func (svc *TopicLoadSvc) Start(zkAddr []string, tracerAddr string) {
+func (svc *TopicLoadSvc) Start(zkAddr []string, etcdAddr []string, tracerAddr string) {
 	svc.startTopicController(zkAddr)
-
-	svc.Consistent = consistent.New()
 
 	optFunc := func(opt *registry.Options) {
 		opt = &registry.Options{
-			Addrs: zkAddr,
+			Addrs: etcdAddr,
 		}
 	}
 
-	r := zookeeper.NewRegistry(optFunc)
+	r := etcdv3.NewRegistry(optFunc)
 	c := client.NewClient(
 		client.Registry(r),
 	)

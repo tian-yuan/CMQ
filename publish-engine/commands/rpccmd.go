@@ -15,15 +15,15 @@ var httpCmd = &cobra.Command{
 	Short: "start rpc server",
 	Run: func(cmd *cobra.Command, args []string) {
 		log.Info("Start rpc server message dispatcher v0.0.1 -- HEAD")
-		var zkAddr string
-		cmd.Flags().StringVarP(&zkAddr, "zkAddress", "z", "127.0.0.1:2181", "zk address array")
-		log.Infof("start publish engine service, zk address : %s", zkAddr)
-		zkAddrArr := strings.Split(zkAddr, ";")
+		var etcdAddr string
+		cmd.Flags().StringVarP(&etcdAddr, "etcdAddress", "z", "127.0.0.1:2379", "etcd address array")
+		log.Infof("start publish engine service, etcd address : %s", etcdAddr)
+		etcdAddrArr := strings.Split(etcdAddr, ";")
 		var tracerAddr string
 		cmd.Flags().StringVarP(&tracerAddr, "tracerAddress", "j", "127.0.0.1:6831", "tracer address array")
 
 		util.Init(
-			util.WithZkUrls(zkAddr),
+			util.WithRegistryUrls(etcdAddr),
 			util.WithTracerUrl(tracerAddr),
 		)
 		util.Ctx.InitMessageDispatcherSvc()
@@ -31,6 +31,6 @@ var httpCmd = &cobra.Command{
 		defer util.Ctx.CloseMessageDispatcherSvc()
 
 		rpcSvc := svc.NewRpcSvc()
-		rpcSvc.Start(zkAddrArr, tracerAddr)
+		rpcSvc.Start(etcdAddrArr, tracerAddr)
 	},
 }

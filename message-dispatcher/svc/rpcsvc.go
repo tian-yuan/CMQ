@@ -7,7 +7,7 @@ import (
 	"github.com/micro/go-micro"
 	"github.com/micro/go-micro/registry"
 	"github.com/micro/go-micro/util/log"
-	"github.com/micro/go-plugins/registry/zookeeper"
+	"github.com/micro/go-plugins/registry/etcdv3"
 	ocplugin "github.com/micro/go-plugins/wrapper/trace/opentracing"
 	opentracing "github.com/opentracing/opentracing-go"
 	proto "github.com/tian-yuan/iot-common/iotpb"
@@ -22,13 +22,13 @@ func NewRpcSvc() *RpcSvc {
 	return &RpcSvc{}
 }
 
-func (svc *RpcSvc) Start(zkAddr []string, tracerAddr string) {
+func (svc *RpcSvc) Start(etcdAddr []string, tracerAddr string) {
 	optFunc := func(opt *registry.Options) {
 		opt = &registry.Options{
-			Addrs: zkAddr,
+			Addrs: etcdAddr,
 		}
 	}
-	registry := zookeeper.NewRegistry(optFunc)
+	registry := etcdv3.NewRegistry(optFunc)
 
 	t, io, err := tracer.NewTracer(util.MESSAGE_DISPATCHER_SVC, tracerAddr)
 	if err != nil {
@@ -42,8 +42,8 @@ func (svc *RpcSvc) Start(zkAddr []string, tracerAddr string) {
 	service := micro.NewService(
 		micro.Name(util.MESSAGE_DISPATCHER_SVC),
 		micro.Registry(registry),
-		micro.RegisterTTL(time.Second*30),
-		micro.RegisterInterval(time.Second*10),
+		micro.RegisterTTL(time.Second*15),
+		micro.RegisterInterval(time.Second*5),
 		micro.WrapHandler(ocplugin.NewHandlerWrapper(opentracing.GlobalTracer())), // add tracing plugin in to middleware
 	)
 

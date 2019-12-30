@@ -15,10 +15,10 @@ var rpccmd = &cobra.Command{
 	Short: "start rpc server",
 	Run: func(cmd *cobra.Command, args []string) {
 		log.Info("Start rpc server registry v0.0.1 -- HEAD")
-		var zkAddr string
-		cmd.Flags().StringVarP(&zkAddr, "zkAddress", "z", "127.0.0.1:2181", "zk address array")
-		log.Infof("start register service, zk address : %s", zkAddr)
-		zkAddrArr := strings.Split(zkAddr, ";")
+		var etcdAddr string
+		cmd.Flags().StringVarP(&etcdAddr, "etcdAddress", "z", "127.0.0.1:2379", "etcd address array")
+		log.Infof("start register service, etcd address : %s", etcdAddr)
+		etcdAddrArr := strings.Split(etcdAddr, ";")
 		var tracerAddr string
 		cmd.Flags().StringVarP(&tracerAddr, "tracerAddress", "j", "127.0.0.1:6831", "tracer address array")
 
@@ -57,6 +57,6 @@ var rpccmd = &cobra.Command{
 		svc.Global.DeviceSvc.Start()
 
 		rpcSvc := svc.NewRpcSvc()
-		rpcSvc.Start(zkAddrArr, tracerAddr)
+		rpcSvc.Start(etcdAddrArr, tracerAddr)
 	},
 }

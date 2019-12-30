@@ -18,13 +18,13 @@ var mqttCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		log.Info("Start mqtt hub gateway v0.0.1 -- HEAD")
 
-		var zkAddr string
-		cmd.Flags().StringVarP(&zkAddr, "zkAddress", "z", "127.0.0.1:2181", "zk address array")
+		var etcdAddr string
+		cmd.Flags().StringVarP(&etcdAddr, "etcdAddress", "z", "127.0.0.1:2379", "etcd address array")
 		var tracerAddr string
 		cmd.Flags().StringVarP(&tracerAddr, "tracerAddress", "j", "127.0.0.1:6831", "tracer address array")
-		log.Infof("start discovery client, zk address : %s", zkAddr)
+		log.Infof("start discovery client, etcd address : %s", etcdAddr)
 		util.Init(
-			util.WithZkUrls(zkAddr),
+			util.WithRegistryUrls(etcdAddr),
 			util.WithTracerUrl(tracerAddr),
 		)
 		defer util.Ctx.CloseRegisterSvc()

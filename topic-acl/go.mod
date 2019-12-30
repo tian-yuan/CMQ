@@ -22,6 +22,7 @@ require (
 	github.com/heralight/logrus_mate v1.0.1
 	github.com/hoisie/redis v0.0.0-20160730154456-b5c6e81454e0 // indirect
 	github.com/kisielk/errcheck v1.2.0 // indirect
+	github.com/mattn/goreman v0.3.5 // indirect
 	github.com/micro/go-micro v1.13.2
 	github.com/micro/go-plugins v1.3.0
 	github.com/mwitkow/go-conntrack v0.0.0-20190716064945-2f068394615f // indirect
@@ -33,9 +34,8 @@ require (
 	github.com/sirupsen/logrus v1.4.2
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.4.0
-	github.com/tian-yuan/iot-common v0.0.6
+	github.com/tian-yuan/iot-common v0.0.7
 	golang.org/x/mobile v0.0.0-20190806162312-597adff16ade // indirect
-	golang.org/x/sys v0.0.0-20190812073006-9eafafc0a87e // indirect
 	golang.org/x/tools v0.0.0-20190809145639-6d4652c779c4 // indirect
 	honnef.co/go/tools v0.0.1-2019.2.2 // indirect
 )
