@@ -1,6 +1,7 @@
 package svc
 
 import (
+	"strings"
 	"time"
 
 	mqtt "github.com/eclipse/paho.mqtt.golang"
@@ -92,4 +93,24 @@ func (mc *mqttClient) run() {
 
 func (mc *mqttClient) handleMessage(client mqtt.Client, msg mqtt.Message) {
 	log.Infof("msg topic : %s, payload : %s", msg.Topic(), msg.Payload())
+	kv := strings.Split(msg.Topic, "/")
+	if len(kv) < 3 {
+		log.Infof("unhandle topic : %s", msg.Topic)
+		return
+	}
+	productKey := kv[0]
+	deviceId := kv[1]
+	msgType := kv[2]
+	if productKey != GlobalMqttConfig.ProductKey {
+		log.Infof("unhandle product, key : %s", productKey)
+		return
+	}
+	switch msgType {
+	case Billing:
+		OnBillingMessage(client, msg)
+	case Monitor:
+		OnMonitorMessage(client, msg)
+	default:
+		log.Infof("unhandled message type : %s", msgType)
+	}
 }
