@@ -1,0 +1,12 @@
+{
+	"mqtt": {
+		"BrokerAddress": "tcp://127.0.0.1:1883",
+		"ProductKey": "127xxx",
+		"DeviceId": "123456789",
+		"Password": "1111"
+	},
+	"http": {
+		"Address": "127.0.0.1",
+		"Port": 8090
+	}
+}

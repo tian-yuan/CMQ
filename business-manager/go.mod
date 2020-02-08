@@ -3,6 +3,7 @@ module github.com/tian-yuan/CMQ/business-manager
 go 1.12
 
 require (
+	github.com/eclipse/paho.mqtt.golang v1.2.0
 	github.com/go-redis/redis v6.15.6+incompatible // indirect
 	github.com/gogap/env_json v0.0.0-20150503135429-86150085ddbe // indirect
 	github.com/gogap/env_strings v0.0.1 // indirect

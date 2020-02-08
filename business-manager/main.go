@@ -16,6 +16,7 @@ import (
 	z "github.com/tian-yuan/iot-common/plugins/zap"
 
 	"github.com/tian-yuan/CMQ/business-manager/commands"
+	"github.com/tian-yuan/CMQ/business-manager/svc"
 	"github.com/tian-yuan/iot-common/basic"
 	"github.com/tian-yuan/iot-common/util"
 )
@@ -47,6 +48,7 @@ func writePid() {
 
 func main() {
 	initLogger()
+	svc.InitConfig()
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	writePid()
