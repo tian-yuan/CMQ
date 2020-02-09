@@ -79,7 +79,8 @@ func (mc *mqttClient) run() {
 		}
 		// begin subscribe all topic
 		// {product_key}/{device_id}/action
-		topic := GlobalMqttConfig.ProductKey + "/#"
+		// just subscribe the message from device
+		topic := GlobalMqttConfig.ProductKey + "/device/#"
 		log.Infof("subscribe mqtt broker, topic : %s", topic)
 		if wsubToken := c.Subscribe(topic, 1, nil); wsubToken.Wait() && wsubToken.Error() != nil {
 			log.Infof("subscribe to mqtt broker for topic : %s error, message : %s", topic, wsubToken.Error())
@@ -93,23 +94,26 @@ func (mc *mqttClient) run() {
 
 func (mc *mqttClient) handleMessage(client mqtt.Client, msg mqtt.Message) {
 	log.Infof("msg topic : %s, payload : %s", msg.Topic(), msg.Payload())
-	kv := strings.Split(msg.Topic, "/")
-	if len(kv) < 3 {
-		log.Infof("unhandle topic : %s", msg.Topic)
+	kv := strings.Split(msg.Topic(), "/")
+	if len(kv) < 4 {
+		log.Infof("unhandle topic : %s", msg.Topic())
 		return
 	}
 	productKey := kv[0]
-	deviceId := kv[1]
-	msgType := kv[2]
+	deviceId := kv[2]
+	msgType := kv[3]
+	log.Infof("handle message, product key : %s, device id : %s, msg type : %s", productKey, deviceId, msgType)
 	if productKey != GlobalMqttConfig.ProductKey {
 		log.Infof("unhandle product, key : %s", productKey)
 		return
 	}
-	switch msgType {
+	switch MsgType(msgType) {
 	case Billing:
 		OnBillingMessage(client, msg)
 	case Monitor:
 		OnMonitorMessage(client, msg)
+	case Manager:
+		OnManagerMessage(client, msg)
 	default:
 		log.Infof("unhandled message type : %s", msgType)
 	}
