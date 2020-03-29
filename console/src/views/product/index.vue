@@ -11,7 +11,11 @@
       </el-form-item>
       <el-form-item label="ProductName">
         <el-input v-model="form.ProductName"/>
+      </el-form-item>
+      <el-form-item label="ProductDetail">
         <el-input v-model="form.Description"/>
+      </el-form-item>
+      <el-form-item>
         <el-button type="primary" @click="onProductCreate">创建</el-button>
       </el-form-item>
     </el-form>
@@ -22,9 +26,14 @@
 <script>
 import JsonEditor from '@/components/JsonEditor'
 import { getProductInfo, createProduct } from '@/api/product'
+import ElForm from '../../../node_modules/element-ui/packages/form/src/form'
+import ElFormItem from '../../../node_modules/element-ui/packages/form/src/form-item'
 
 export default {
-  components: { JsonEditor },
+  components: {
+    ElFormItem,
+    ElForm,
+    JsonEditor },
   data() {
     return {
       form: {

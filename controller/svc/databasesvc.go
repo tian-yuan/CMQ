@@ -86,6 +86,31 @@ func (ds *DatabaseSvc) CreateProduct(info ProductInfo) (uint32, error) {
 	return uint32(guid), nil
 }
 
+func (ds *DatabaseSvc) DeleteProduct(productKey string) error {
+	// delete product
+	deleteStr := fmt.Sprintf("update %s set delete_flag=1 where product_key='%s'", productDatabase, productKey)
+	stmtIns, err := ds.Db.Prepare(deleteStr)
+	if err != nil {
+		log.Error("database prepare failed.")
+		return err
+	}
+	defer stmtIns.Close()
+	var res sql.Result
+	res, err = stmtIns.Exec()
+	if err != nil {
+		log.Error("delete product failed.")
+		return err
+	}
+	count, err := res.RowsAffected()
+	if err != nil {
+		log.Error("delete product failed.")
+		return err
+	} else {
+		log.Infof("delete product count : %d", count)
+	}
+	return nil
+}
+
 func (ds *DatabaseSvc) QueryProductInfo(productKey string) (*ProductInfo, error) {
 	// query product
 	queryStr := fmt.Sprintf("select product_name, description, access_points, device_count, create_at, update_at "+
@@ -111,7 +136,7 @@ func (ds *DatabaseSvc) QueryProductInfo(productKey string) (*ProductInfo, error)
 func (ds *DatabaseSvc) QueryProductList(offset int32, limit int32, keyword string) ([]ProductInfo, error) {
 	var productInfoList []ProductInfo
 	queryStr := fmt.Sprintf("select product_key, product_name, description, access_points, device_count, create_at, update_at "+
-		"from %s order by id limit %d offset %d", productDatabase, limit, offset)
+		"from %s where delete_flag=0 order by id limit %d offset %d", productDatabase, limit, offset)
 	rows, err := ds.Db.Query(queryStr)
 	if err != nil {
 		return nil, err
@@ -135,6 +160,7 @@ const deviceDatabase = "device_info"
 
 func (ds *DatabaseSvc) RegisterDevices(count int32, productKey string) (string, error) {
 	var i int32
+	sd := 0
 	for i = 0; i < count; i++ {
 		deviceName := uuid.New().String()
 		deviceSecret := uuid.New().String()
@@ -149,17 +175,80 @@ func (ds *DatabaseSvc) RegisterDevices(count int32, productKey string) (string, 
 		_, err = stmtIns.Exec(productKey, deviceName, deviceSecret)
 		if err != nil {
 			log.Error("create product failed.")
+			break
+		}
+		sd++
+	}
+	if sd > 0 {
+		updateStr := fmt.Sprintf("update %s set device_count=device_count+%d where product_key='%s'", productDatabase, sd, productKey)
+		stmtIns, err := ds.Db.Prepare(updateStr)
+		if err != nil {
+			log.Error("database prepare failed.")
 			return "", err
 		}
-		return "", nil
+		defer stmtIns.Close()
+		var res sql.Result
+		res, err = stmtIns.Exec()
+		if err != nil {
+			log.Error("update product failed.")
+			return "", err
+		}
+		rc, err := res.RowsAffected()
+		if err != nil {
+			log.Error("update product failed.")
+			return "", err
+		} else {
+			log.Infof("update product success, update row count : %d.", rc)
+		}
 	}
 	return "", nil
+}
+
+func (ds *DatabaseSvc) DeleteDevice(productKey string, deviceName string) error {
+	sd := 0
+	deleteStr := fmt.Sprintf("update %s set delete_flag=1 where product_key='%s' and device_name='%s'",
+		deviceDatabase, productKey, deviceName)
+	stmtIns, err := ds.Db.Prepare(deleteStr)
+	if err != nil {
+		log.Error("database prepare failed.")
+		return err
+	}
+	defer stmtIns.Close()
+	_, err = stmtIns.Exec()
+	if err != nil {
+		log.Error("create product failed.")
+		return err
+	}
+	sd++
+	if sd > 0 {
+		updateStr := fmt.Sprintf("update %s set device_count=device_count-%d where product_key='%s'", productDatabase, sd, productKey)
+		stmtIns, err := ds.Db.Prepare(updateStr)
+		if err != nil {
+			log.Error("database prepare failed.")
+			return err
+		}
+		defer stmtIns.Close()
+		var res sql.Result
+		res, err = stmtIns.Exec()
+		if err != nil {
+			log.Error("update product failed.")
+			return err
+		}
+		rc, err := res.RowsAffected()
+		if err != nil {
+			log.Error("update product failed.")
+			return err
+		} else {
+			log.Infof("update product success, update row count :%d.", rc)
+		}
+	}
+	return nil
 }
 
 func (ds *DatabaseSvc) QueryDeviceList(productKey string, offset int32, limit int32, keyword string) ([]DeviceInfo, error) {
 	var deviceInfoList []DeviceInfo
 	queryStr := fmt.Sprintf("select product_key, device_name, device_secret, model, product_version, sdk_version, create_at, update_at, "+
-		"ifnull(last_active_at, ''), ifnull(apply_id, ''), status, delete_flag from %s where product_key='%s' order by id limit %d offset %d",
+		"ifnull(last_active_at, ''), ifnull(apply_id, ''), status, delete_flag from %s where product_key='%s' and delete_flag=0 order by id limit %d offset %d",
 		deviceDatabase, productKey, limit, offset)
 	rows, err := ds.Db.Query(queryStr)
 	if err != nil {

@@ -51,6 +51,16 @@
           <span>{{ scope.row.UpdateAt | parseTime('{y}-{m}-{d} {h}:{i}') }}</span>
         </template>
       </el-table-column>
+      <el-table-column :label="$t('Operation')" width="150px">
+        <template slot-scope="scope">
+          <el-col :span="11">
+            <el-button type="primary" @click="onProductModify(scope.row)">修改</el-button>
+          </el-col>
+          <el-col :span="11">
+            <el-button type="primary" @click="onProductDelete(scope.row)">删除</el-button>
+          </el-col>
+        </template>
+      </el-table-column>
     </el-table>
 
     <pagination v-show="total>0" :total="total" :page.sync="listQuery.page" :limit.sync="listQuery.limit" @pagination="getList" />
@@ -71,7 +81,7 @@
 
 <script>
 
-import { fetchProductList } from '@/api/products'
+import { fetchProductList, deleteProduct } from '@/api/products'
 import waves from '@/directive/waves' // Waves directive
 import { parseTime } from '@/utils'
 import Pagination from '@/components/Pagination' // Secondary package based on el-pagination
@@ -157,6 +167,17 @@ export default {
           return v[j]
         }
       }))
+    },
+    onProductModify(row) {
+
+    },
+    onProductDelete(row) {
+      var params = {
+        ProductKey: row.ProductKey
+      }
+      deleteProduct(params).then(response => {
+        this.getList()
+      })
     }
   }
 }

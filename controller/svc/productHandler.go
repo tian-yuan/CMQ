@@ -126,6 +126,29 @@ func handleUpdateProduct(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleDeleteProduct(w http.ResponseWriter, r *http.Request) {
+	productKey := r.URL.Query().Get("ProductKey")
+	log.Infof("delete product info, product key : %s", productKey)
+	w.Header().Set("Content-Type", "application/json")
+	err := Ctx.Dbsvc.DeleteProduct(productKey)
+	if err != nil {
+		errInfo := &ErrInfo{
+			Code:    "500",
+			Message: err.Error(),
+		}
+		b, _ := json.Marshal(errInfo)
+		w.Write(b)
+		w.WriteHeader(http.StatusOK)
+	} else {
+		type Resp struct {
+			Code    string
+			Message string
+		}
+		var resp Resp
+		resp.Code = "200"
+		b, _ := json.Marshal(resp)
+		w.Write(b)
+		w.WriteHeader(http.StatusOK)
+	}
 }
 
 func handleQueryProductQuota(w http.ResponseWriter, r *http.Request) {

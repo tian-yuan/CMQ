@@ -1,6 +1,6 @@
 <template>
   <div class="dashboard-container">
-    <div class="dashboard-text">欢迎 {{ name }} 登录推送统计查询系统</div>
+    <div class="dashboard-text">欢迎 {{ name }} 登录物联网设备管理系统</div>
   </div>
 </template>
 

@@ -3,9 +3,11 @@
     <div class="filter-container">
       <el-input v-model="listQuery.Keyword" :placeholder="$t('Keyword')" style="width: 200px;" class="filter-item" @keyup.enter.native="handleFilter" />
       <el-input v-model="listQuery.ProductKey" :placeholder="$t('ProductKey')" style="width: 200px;" class="filter-item" @keyup.enter.native="handleFilter" />
+      <el-input v-model="listQuery.Count" :placeholder="$t('Count')" style="width: 200px;"/>
       <el-button v-waves class="filter-item" style="margin-left: 10px;margin-bottom: 10px;" type="primary" icon="el-icon-search" @click="handleFilter">
         {{ $t('table.search') }}
       </el-button>
+      <el-button type="primary" @click="onRegister">注册</el-button>
     </div>
 
     <el-table
@@ -52,6 +54,16 @@
           <span>{{ scope.row.UpdateAt | parseTime('{y}-{m}-{d} {h}:{i}') }}</span>
         </template>
       </el-table-column>
+      <el-table-column :label="$t('Operation')" width="150px">
+        <template slot-scope="scope">
+          <el-col :span="11">
+            <el-button type="primary" @click="onDeviceModify(scope.row)">修改</el-button>
+          </el-col>
+          <el-col :span="11">
+            <el-button type="primary" @click="onDeviceDelete(scope.row)">删除</el-button>
+          </el-col>
+        </template>
+      </el-table-column>
     </el-table>
 
     <pagination v-show="total>0" :total="total" :page.sync="listQuery.page" :limit.sync="listQuery.limit" @pagination="getList" />
@@ -72,7 +84,7 @@
 
 <script>
 
-import { fetchDeviceList } from '@/api/devices'
+import { fetchDeviceList, registerDevices, deleteDevice } from '@/api/devices'
 import waves from '@/directive/waves' // Waves directive
 import { parseTime } from '@/utils'
 import Pagination from '@/components/Pagination' // Secondary package based on el-pagination
@@ -100,12 +112,14 @@ export default {
       tableKey: 0,
       list: null,
       total: 0,
+      count: 0,
       listLoading: true,
       listQuery: {
         page: 1,
         limit: 20,
         ProductKey: undefined,
-        Keyword: undefined
+        Keyword: undefined,
+        Count: 0
       },
       sortOptions: [{ label: 'ID Ascending', key: '+id' }, { label: 'ID Descending', key: '-id' }],
       rules: {
@@ -158,6 +172,30 @@ export default {
           return v[j]
         }
       }))
+    },
+    onRegister() {
+      var params = {
+        'ProductKey': this.listQuery.ProductKey
+      }
+      var body = {
+        'Count': this.listQuery.Count
+      }
+      registerDevices(params, body).then(response => {
+        console.log('response : ', response)
+        this.getList()
+      })
+    },
+    onDeviceModify(row) {
+
+    },
+    onDeviceDelete(row) {
+      var params = {
+        ProductKey: row.ProductKey,
+        DeviceName: row.DeviceName
+      }
+      deleteDevice(params).then(response => {
+        this.getList()
+      })
     }
   }
 }

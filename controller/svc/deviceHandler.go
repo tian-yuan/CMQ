@@ -109,6 +109,30 @@ func handleQueryDeviceList(w http.ResponseWriter, r *http.Request) {
 }
 
 func handleDeleteDevice(w http.ResponseWriter, r *http.Request) {
+	productKey := r.URL.Query().Get("ProductKey")
+	deviceName := r.URL.Query().Get("DeviceName")
+	log.Infof("delete device info, product key : %s, device name : %s", productKey, deviceName)
+	w.Header().Set("Content-Type", "application/json")
+	err := Ctx.Dbsvc.DeleteDevice(productKey, deviceName)
+	if err != nil {
+		errInfo := &ErrInfo{
+			Code:    "500",
+			Message: err.Error(),
+		}
+		b, _ := json.Marshal(errInfo)
+		w.Write(b)
+		w.WriteHeader(http.StatusOK)
+	} else {
+		type Resp struct {
+			Code    string
+			Message string
+		}
+		var resp Resp
+		resp.Code = "200"
+		b, _ := json.Marshal(resp)
+		w.Write(b)
+		w.WriteHeader(http.StatusOK)
+	}
 }
 
 func handleQueryDeviceQuota(w http.ResponseWriter, r *http.Request) {

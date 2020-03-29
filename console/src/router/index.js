@@ -42,19 +42,40 @@ export const constantRouterMap = [
     component: Layout,
     redirect: '/product-api/product',
     name: 'ProductApi',
-    meta: { title: '产品信息', icon: 'example' },
+    meta: { title: '产品管理', icon: 'example' },
     children: [
-      {
-        path: 'product',
-        name: 'Product',
-        component: () => import('@/views/product/index'),
-        meta: { title: '产品详情', icon: 'example' }
-      },
       {
         path: 'products',
         name: 'Products',
         component: () => import('@/views/products/index'),
         meta: { title: '产品列表', icon: 'example' }
+      },
+      {
+        path: 'product',
+        name: 'Product',
+        component: () => import('@/views/product/index'),
+        meta: { title: '产品详情', icon: 'example' }
+      }
+    ]
+  },
+  {
+    path: '/device-statistics',
+    component: Layout,
+    redirect: '/device-statistics/device',
+    name: 'DeviceStatistics',
+    meta: { title: '设备管理', icon: 'example' },
+    children: [
+      {
+        path: 'devices',
+        name: 'Devices',
+        component: () => import('@/views/devices/index'),
+        meta: { title: '设备列表', icon: 'example' }
+      },
+      {
+        path: 'device',
+        name: 'Device',
+        component: () => import('@/views/device/index'),
+        meta: { title: '设备详情', icon: 'example' }
       }
     ]
   },
@@ -76,27 +97,6 @@ export const constantRouterMap = [
         name: 'Messages',
         component: () => import('@/views/messages/index'),
         meta: { title: '消息列表', icon: 'example' }
-      }
-    ]
-  },
-  {
-    path: '/device-statistics',
-    component: Layout,
-    redirect: '/device-statistics/device',
-    name: 'DeviceStatistics',
-    meta: { title: '设备统计', icon: 'example' },
-    children: [
-      {
-        path: 'device',
-        name: 'Device',
-        component: () => import('@/views/device/index'),
-        meta: { title: '设备详情', icon: 'example' }
-      },
-      {
-        path: 'devices',
-        name: 'Devices',
-        component: () => import('@/views/devices/index'),
-        meta: { title: '设备列表', icon: 'example' }
       }
     ]
   },
